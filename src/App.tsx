@@ -1,14 +1,9 @@
+// src/App.tsx
+import React from 'react';
+import LandingPage from './Pages/LandingPage';
 
-import Scene from './Components/Scene'
+const App: React.FC = () => {
+  return <LandingPage />;
+};
 
-function App() {
-
-
-  return (
-    <>
-     <Scene />
-    </>
-  )
-}
-
-export default App
+export default App;
