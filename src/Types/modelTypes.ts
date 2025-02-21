@@ -1,4 +1,3 @@
-// src/types/ModelTypes.ts
 import { SpringValue } from '@react-spring/three';
 import { Mesh, BufferGeometry, MeshStandardMaterial, Group } from 'three';
 
@@ -11,9 +10,10 @@ export interface ModelRotationProps {
 export interface ModelProps {
   onGemClick: () => void;
   rotation: ModelRotationProps;
+  scale?: number; // Propiedad opcional para ajustar la escala
+  disableInteractivity?: boolean; // Para deshabilitar onClick en móviles
 }
 
-// Tipo para el resultado esperado de useGLTF
 export interface GLTFResult {
   nodes: {
     Curve002: Mesh<BufferGeometry, MeshStandardMaterial>;

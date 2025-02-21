@@ -5,9 +5,12 @@ import { Environment } from '@react-three/drei';
 import { useSpring } from '@react-spring/three';
 import Model from '../Components/Model';
 import AnimatedCamera from '../Components/AnimatedCamera';
-import EventsPanel from '../Components/EventsPanel';
+import EventsPanelWrapper from '../Components/EventsPanelWrapper';
+import { useMediaQuery } from '../Hooks/useMediaQuery';
+import { ModelRotationProps } from '../Types/modelTypes';
 
 const LandingPage: React.FC = () => {
+  const isMobileOrTablet = useMediaQuery("(max-width: 768px)");
   const initialCameraPos: [number, number, number] = [0, 0, 15];
   const alternativeCameraPos: [number, number, number] = [4, 0, 15];
 
@@ -21,17 +24,16 @@ const LandingPage: React.FC = () => {
     config: { mass: 1, tension: 50, friction: 20 },
   }));
 
-  // Al hacer clic en la gema, alternamos la cámara y mostramos/ocultamos el panel
   const handleGemCameraAnimation = () => {
+    if (isMobileOrTablet) return;
     const isAlternative =
       cameraTarget[0] === alternativeCameraPos[0] &&
       cameraTarget[1] === alternativeCameraPos[1] &&
       cameraTarget[2] === alternativeCameraPos[2];
-
     if (isAlternative) {
       setCameraTarget(initialCameraPos);
       setShowPanel(false);
-      api.start({ rotationZ:0 });
+      api.start({ rotationZ: 0 });
     } else {
       setCameraTarget(alternativeCameraPos);
       setShowPanel(true);
@@ -39,35 +41,56 @@ const LandingPage: React.FC = () => {
     }
   };
 
+  const modelRotation: ModelRotationProps = {
+    rotationX: springs.rotationX,
+    rotationY: springs.rotationY,
+    rotationZ: springs.rotationZ,
+  };
+
   return (
-    <div className="relative w-screen h-screen bg-white">
-      {/* Logo / Texto en la esquina superior izquierda */}
+    <div className="w-screen min-h-screen bg-white flex flex-col relative">
+      {isMobileOrTablet ? (
+        <>
+          {/* Móviles: Canvas ocupa la mitad superior */}
+          <div className="w-full h-1/2">
+            <Canvas className="w-full h-full" camera={{ position: initialCameraPos, fov: 60 }}>
+              <ambientLight intensity={0.5} />
+              <directionalLight position={[10, 10, 5]} intensity={1.5} />
+              <Environment preset="sunset" />
+              <Model
+                onGemClick={() => {}}
+                rotation={modelRotation}
+                scale={0.5}
+                disableInteractivity={true}
+              />
+              <AnimatedCamera target={cameraTarget} />
+            </Canvas>
+          </div>
+          {/* El wrapper de eventos se renderiza debajo */}
+          <EventsPanelWrapper show={true} mobile={true} />
+        </>
+      ) : (
+        <>
+          {/* Desktop: Canvas ocupa toda la pantalla */}
+          <div className="relative flex-1">
+            <Canvas className="w-full h-full" camera={{ position: initialCameraPos, fov: 40 }}>
+              <ambientLight intensity={0.5} />
+              <directionalLight position={[10, 10, 5]} intensity={1.5} />
+              <Environment preset="sunset" />
+              <Model onGemClick={handleGemCameraAnimation} rotation={modelRotation} />
+              <AnimatedCamera target={cameraTarget} />
+            </Canvas>
+            {/* Wrapper para el panel overlay en desktop */}
+            <EventsPanelWrapper show={showPanel} mobile={false} />
+          </div>
+        </>
+      )}
+
+      {/* Elementos fijos: Logo y texto inferior */}
       <div className="absolute top-4 left-4">
-        <span className="text-xl font-bold text-gray-800">FUNDACOR</span>
+        <span className="text-xl font-bold text-gray-800 font-renogare">FUNDACOR</span>
       </div>
-
-      {/* Canvas principal */}
-      <Canvas className="w-full h-full" camera={{ position: initialCameraPos, fov: 40 }}>
-        <ambientLight intensity={0.5} />
-        <directionalLight position={[10, 10, 5]} intensity={1.5} />
-        <Environment preset="sunset" />
-
-        {/* Nuestro modelo con animación de rotación */}
-        <Model
-          onGemClick={handleGemCameraAnimation}
-          rotation={{
-            rotationX: springs.rotationX,
-            rotationY: springs.rotationY,
-            rotationZ: springs.rotationZ
-          }}
-        />
-
-        {/* Animación de la cámara */}
-        <AnimatedCamera target={cameraTarget} />
-      </Canvas>
-
-      {/* Texto inferior centrado */}
-      <div className="absolute bottom-4 w-full flex flex-col items-center justify-center text-gray-700 text-sm">
+      <div className="mt-auto w-full flex flex-col items-center justify-center text-gray-700 text-sm font-caviardreams">
         <span>FUNDACOR © 2019 - 2020</span>
         <div className="mt-2">
           <div className="w-6 h-6 rounded-full border border-gray-700 flex items-center justify-center">
@@ -75,9 +98,6 @@ const LandingPage: React.FC = () => {
           </div>
         </div>
       </div>
-
-      {/* Panel de eventos que se desliza desde la derecha */}
-      <EventsPanel show={showPanel} />
     </div>
   );
 };

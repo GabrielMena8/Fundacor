@@ -10,7 +10,7 @@ const AnimatedCamera: React.FC<AnimatedCameraProps> = ({ target }) => {
   const { camera } = useThree();
   const [spring, api] = useSpring(() => ({
     pos: camera.position.toArray() as [number, number, number],
-    config: { mass: 1, tension: 50, friction: 20 }
+    config: { mass: 1, tension: 50, friction: 20 },
   }));
 
   useEffect(() => {
