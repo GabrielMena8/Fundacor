@@ -1,1 +1,21 @@
 @import "tailwindcss";
+
+@font-face {
+    font-family: 'Renogare';
+    src: url('/public/Fonts/Renogare-Regular') format('otf');
+    font-weight: normal;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: 'CaviarDreams';
+    src: url('/public/Fonts/CaviarDreams.ttf') format('ttf');
+    font-weight: bold;
+    font-style: normal;
+}
+
+
+@theme{
+    --font-caviar: 'CaviarDreams', sans-serif;
+    --font-renogare: 'Renogare', sans-serif;
+}
