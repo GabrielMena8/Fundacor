@@ -8,10 +8,19 @@ export interface ModelRotationProps {
 }
 
 export interface ModelProps {
-  onGemClick: () => void;
+  /** Se llama al hacer clic en la parte izquierda de la gema */
+  onLeftClick: () => void;
+  /** Se llama al hacer clic en la parte derecha de la gema */
+  onRightClick: () => void;
+
+  /** Rotaciones animadas con react-spring */
   rotation: ModelRotationProps;
-  scale?: number; // Propiedad opcional para ajustar la escala
-  disableInteractivity?: boolean; // Para deshabilitar onClick en móviles
+
+  /** Factor de escala (opcional) */
+  scale?: number;
+
+  /** Para deshabilitar la interactividad en móviles o cuando lo requieras */
+  disableInteractivity?: boolean;
 }
 
 export interface GLTFResult {

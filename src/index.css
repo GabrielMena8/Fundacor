@@ -19,3 +19,23 @@
     --font-caviar: 'CaviarDreams', sans-serif;
     --font-renogare: 'Renogare', sans-serif;
 }
+
+
+.scrollbar-hide {
+    -ms-overflow-style: none;  /* IE and Edge */
+    scrollbar-width: none;     /* Firefox */
+  }
+  
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;             /* Chrome, Safari, Opera */
+  }
+
+  .scrollbar-hide::-webkit-scrollbar-thumb {
+    display: none;             /* Chrome, Safari, Opera */
+  }
+
+    .scrollbar-hide::-webkit-scrollbar-track {
+        display: none;             /* Chrome, Safari, Opera */
+    }
+
+    

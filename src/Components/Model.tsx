@@ -1,48 +1,65 @@
-import React, { useEffect, useRef } from 'react';
-import { useGLTF} from '@react-three/drei';
-import { ThreeEvent } from '@react-three/fiber';
+// src/Components/Model.tsx
+import React, { useEffect, useRef, useState } from 'react';
+import { useGLTF } from '@react-three/drei';
 import { a } from '@react-spring/three';
 import * as THREE from 'three';
 import { Color, Box3, Vector3 } from 'three';
-import { ModelProps, GLTFResult } from '../Types/modelTypes';
 import { MeshStandardMaterial } from 'three';
+import { ModelProps, GLTFResult } from '../Types/modelTypes';
+import { ThreeEvent } from '@react-three/fiber';
 
 const Model: React.FC<ModelProps> = ({
-  onGemClick,
+  onLeftClick,
+  onRightClick,
   rotation,
   scale = 1,
   disableInteractivity = false,
 }) => {
-  // Cargamos el modelo glTF (asegúrate de tener FUNDACOR.gltf en public/)
   const { nodes, scene } = useGLTF('/LogoFUNDACOR.gltf') as unknown as GLTFResult;
   const groupRef = useRef<THREE.Group>(null);
   const gemRef = useRef<THREE.Mesh>(null);
 
-  // Clonamos el material de la gema para evitar compartir referencias
   useEffect(() => {
+    // Clonamos material de la gema
     if (nodes.Curve003?.material) {
       (nodes.Curve003.material as MeshStandardMaterial) =
         (nodes.Curve003.material as MeshStandardMaterial).clone();
     }
   }, [nodes]);
 
-  // Centramos el modelo usando el bounding box
   useEffect(() => {
     if (groupRef.current) {
+      // Centrar el modelo en el origen
       const box = new Box3().setFromObject(groupRef.current);
       const center = new Vector3();
       box.getCenter(center);
       groupRef.current.position.sub(center);
+
+      // Ajustar un offset en Y para que la corona se vea centrada verticalmente
+     
+      // Ajusta este valor según necesites
     }
   }, [scene]);
 
-  // Estado para el color de la gema
-  const [gemColor, setGemColor] = React.useState('#FFFF00');
+  // Manejo de color de la gema (opcional)
+  const [gemColor, setGemColor] = useState('#FFFF00');
 
   const handleGemClick = (event: ThreeEvent<MouseEvent>) => {
+    if (disableInteractivity) return;
     event.stopPropagation();
+    // Cambia color de ejemplo
     setGemColor(prev => (prev === '#FFFF00' ? '#FF0000' : '#FFFF00'));
-    onGemClick();
+
+    // Detectamos la parte izquierda/derecha
+    if (!gemRef.current) return;
+    const intersection = event.intersections[0];
+    if (!intersection) return;
+    const localPoint = gemRef.current.worldToLocal(intersection.point.clone());
+    if (localPoint.x < 0) {
+      if (onLeftClick) onLeftClick();
+    } else {
+      if (onRightClick) onRightClick();
+    }
   };
 
   useEffect(() => {
@@ -64,7 +81,7 @@ const Model: React.FC<ModelProps> = ({
       <primitive
         object={nodes.Curve003}
         ref={gemRef}
-        onClick={disableInteractivity ? undefined : handleGemClick}
+        onClick={handleGemClick}
       />
     </a.group>
   );
