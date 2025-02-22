@@ -9,24 +9,22 @@ type OrganigramaPanelProps = {
 const OrganigramaPanel: React.FC<OrganigramaPanelProps> = ({ show, mobile }) => {
     if (mobile) {
         return (
-            <div className="flex flex-col h-full bg-gradient-to-t from-[#1F322E]/80 to-transparent backdrop-blur-md text-white p-4">
-                <h2 className="text-2xl font-bold mb-4 text-center">Organigrama FUNDACOR</h2>
-                <div className="flex-1 overflow-y-auto">
-                {/* <img src="/organigrama_simplificado.png" alt="Organigrama" className="mx-auto mb-6" /> */}
-                    <h3 className="text-xl font-semibold mb-3">Estructura Organizacional</h3>
-                    <p className="text-sm mb-4">
+            <div className="bg-[#1f322e] text-white p-6 font-caviardreams">
+                <h2 className="text-2xl font-renogare mb-4 text-[#ffdd08]">FUNDACOR</h2>
+                <div className="overflow-y-auto">
+                    <h3 className="text-xl font-semibold mb-3 text-[#ffdd08]">Estructura Organizacional</h3>
+                    <p className="text-sm mb-4 leading-relaxed">
                         FUNDACOR está organizada en diferentes áreas especializadas para asegurar 
                         un funcionamiento eficiente y coordinado de todas nuestras actividades.
                     </p>
-                    <h4 className="text-lg font-semibold mb-2">Principales Departamentos:</h4>
-                    <ul className="list-disc list-inside mb-4 ml-2">
-                        <li className="mb-2">Dirección Ejecutiva</li>
-                        <li className="mb-2">Administración y Finanzas</li>
-                        <li className="mb-2">Gestión de Proyectos</li>
-                        <li className="mb-2">Recursos Humanos</li>
-                        <li className="mb-2">Desarrollo Comunitario</li>
+                    <h4 className="text-lg font-semibold mb-2 text-[#ffdd08]">Principales Departamentos:</h4>
+                    <ul className="list-disc list-inside mb-4 space-y-2">
+                        <li>Contraloría</li>
+                        <li>Finanzas</li>
+                        <li>Recursos Humanos</li>
+                        <li>Desarrollo Comunitario</li>
                     </ul>
-                    <p className="text-sm mb-4">
+                    <p className="leading-relaxed text-sm">
                         Cada departamento trabaja en estrecha colaboración para cumplir 
                         nuestra misión de servicio a la comunidad.
                     </p>
@@ -40,40 +38,55 @@ const OrganigramaPanel: React.FC<OrganigramaPanelProps> = ({ show, mobile }) => 
                     fixed top-0 left-0 h-full w-full sm:w-1/2 md:w-1/3 lg:w-1/4
                     transform transition-transform duration-500 ease-in-out
                     ${show ? 'translate-x-0' : '-translate-x-full'}
-                    bg-gradient-to-r from-[#1F322E]/80 to-transparent backdrop-blur-md text-white p-6
+                    bg-gradient-to-r from-[#1f322e] to-transparent
+                    text-white p-6 font-caviardreams 
+                    
                 `}
                 style={{ overflowY: 'auto' }}
             >
-                <div className="mt-5 flex flex-col h-full">
-                    <h2 className="text-3xl font-bold mb-6 text-center">Organigrama FUNDACOR</h2>
-                    <div className="flex-1 overflow-y-auto">
-                        {/* <img src="/organigrama_detallado.png" alt="Organigrama Desktop" className="mx-auto mb-8" /> */}
-                        <h3 className="text-2xl font-semibold mb-4">Nuestra Estructura</h3>
-                        <p className="text-base mb-6">
+                <div className="flex text-justify flex-col h-auto  rounded-bl-xl rounded-r-4xl  p-4">
+                    <div className="flex-1 p-2  ">
+                        <h2 className="text-2xl text-center font-renogare mb-4 text-[#ffdd08]">FUNDACOR</h2>
+                        <p className="text-base leading-relaxed mb-6">
                             La estructura organizacional de FUNDACOR está diseñada para maximizar 
                             la eficiencia y el impacto de nuestras iniciativas comunitarias.
                         </p>
-                        <h4 className="text-xl font-semibold mb-3">Áreas Principales:</h4>
+
+                        <h3 className="text-xl font-semibold mb-3 text-[#ffdd08]">Áreas Principales:</h3>
                         <div className="grid grid-cols-1 gap-4 mb-6">
-                            <div className="p-3 bg-white/10 rounded-lg">
-                                <h5 className="font-semibold mb-2">Dirección Ejecutiva</h5>
-                                <p className="text-sm">Lidera la visión estratégica y supervisa todas las operaciones.</p>
+                            <div className="p-4 bg-[#1f322e]/80 border border-[#ffdd08]/20 rounded-lg shadow-md hover:border-[#ffdd08]/50 hover:border-2 transition-colors">
+                                <h4 className="font-semibold mb-2 text-[#ffdd08]">Contraloría</h4>
+                                <p className="text-sm leading-relaxed">
+                                    Supervisa y controla las operaciones financieras.
+                                </p>
                             </div>
-                            <div className="p-3 bg-white/10 rounded-lg">
-                                <h5 className="font-semibold mb-2">Administración y Finanzas</h5>
-                                <p className="text-sm">Gestiona recursos y asegura la sostenibilidad financiera.</p>
+                            <div className="p-4 bg-[#1f322e]/80 border border-[#ffdd08]/20 rounded-lg shadow-md hover:border-[#ffdd08]/50 *:hover:border-2  transition-colors">
+                                <h4 className="font-semibold mb-2 text-[#ffdd08]">Finanzas</h4>
+                                <p className="text-sm leading-relaxed">
+                                    Gestiona recursos y asegura la sostenibilidad financiera.
+                                </p>
                             </div>
-                            <div className="p-3 bg-white/10 rounded-lg">
-                                <h5 className="font-semibold mb-2">Gestión de Proyectos</h5>
-                                <p className="text-sm">Coordina y ejecuta las iniciativas de desarrollo.</p>
+                            <div className="p-4 bg-[#1f322e]/80 border border-[#ffdd08]/20 rounded-lg shadow-md hover:border-[#ffdd08]/50 hover:border-2  transition-colors">
+                                <h4 className="font-semibold mb-2 text-[#ffdd08]">Recursos Humanos</h4>
+                                <p className="text-sm leading-relaxed">
+                                    Gestiona el talento y desarrollo del personal.
+                                </p>
+                            </div>
+                            <div className="p-4 bg-[#1f322e]/80 border border-[#ffdd08]/20 rounded-lg shadow-md hover:border-[#ffdd08]/50 hover:border-2  transition-colors">
+                                <h4 className="font-semibold mb-2 text-[#ffdd08]">Desarrollo Comunitario</h4>
+                                <p className="text-sm leading-relaxed">
+                                    Coordina y ejecuta las iniciativas de desarrollo.
+                                </p>
                             </div>
                         </div>
-                        <p className="text-sm italic text-center">
+
+                        <p className="text-sm italic text-center text-[#ffdd08]/80">
                             Trabajamos unidos para crear un impacto positivo en nuestra comunidad.
                         </p>
                     </div>
                 </div>
             </div>
+        
         );
     }
 };

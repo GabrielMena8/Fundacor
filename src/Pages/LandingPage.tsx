@@ -15,19 +15,21 @@ const LandingPage: React.FC = () => {
 
   // Ajustes de cámara
   const initialCameraPosMobile: [number, number, number] = [0, 0, 15];
-  // En desktop, subimos la cámara un poco (y=1) y la alejamos a z=12
   const initialCameraPosDesktop: [number, number, number] = [0, 1, 15];
 
+  // Posiciones para overlays en desktop
   const alternativeCameraPosRight: [number, number, number] = [4, 1, 12];
   const alternativeCameraPosLeft: [number, number, number] = [-4, 1, 12];
 
-  // Selecciona la posición de cámara inicial
+  // Selecciona posición inicial según dispositivo
   const initialCameraPos = isMobileOrTablet ? initialCameraPosMobile : initialCameraPosDesktop;
 
+  // Estados para overlays (solo en desktop)
   const [cameraTarget, setCameraTarget] = useState<[number, number, number]>(initialCameraPos);
   const [showEventsPanel, setShowEventsPanel] = useState(false);
   const [showOrganigramaPanel, setShowOrganigramaPanel] = useState(false);
 
+  // Animación de la corona con react-spring
   const [springs, api] = useSpring(() => ({
     rotationX: Math.PI / 2,
     rotationY: 0,
@@ -35,8 +37,7 @@ const LandingPage: React.FC = () => {
     config: { mass: 1, tension: 50, friction: 20 },
   }));
 
- 
-   // Clic en la parte izquierda -> Organigrama
+  // Clic izquierdo -> Organigrama
   const handleLeftClick = () => {
     if (isMobileOrTablet) {
       setShowOrganigramaPanel(true);
@@ -59,7 +60,7 @@ const LandingPage: React.FC = () => {
     }
   };
 
-  // Clic en la parte derecha -> Eventos
+  // Clic derecho -> Eventos
   const handleRightClick = () => {
     if (isMobileOrTablet) {
       setShowEventsPanel(true);
@@ -82,19 +83,20 @@ const LandingPage: React.FC = () => {
     }
   };
 
+  // Rotaciones animadas
   const modelRotation: ModelRotationProps = {
     rotationX: springs.rotationX,
     rotationY: springs.rotationY,
     rotationZ: springs.rotationZ,
   };
 
-  // Escala del modelo: en desktop lo hacemos 1.2 en lugar de 1.5
+  // Escala del modelo (puedes ajustar a tu gusto)
   const modelScale = isMobileOrTablet ? 0.75 : 1;
 
   return (
-    <div className="w-screen h-screen bg-white relative">
+    <div className="w-screen h-screen bg-gray-50 relative font-caviardreams">
       {isMobileOrTablet ? (
-        // MOBILE
+        // MOBILE: Canvas en la mitad superior, secciones debajo
         <div className="flex flex-col h-full">
           <div className="w-full h-1/2">
             <Canvas className="w-full h-full" camera={{ position: initialCameraPos, fov: 40 }}>
@@ -111,16 +113,17 @@ const LandingPage: React.FC = () => {
               <AnimatedCamera target={cameraTarget} />
             </Canvas>
           </div>
-          {/* Secciones en orden normal */}
+          {/* Secciones en orden normal (scroll normal) */}
           <div className="w-full flex flex-col">
-            <OrganigramaPanel show={true} mobile={true} />
+            {/* Sección de Eventos */}
             <EventsPanel show={true} mobile={true} />
+            {/* Sección de Organigrama */}
+            <OrganigramaPanel show={true} mobile={true} />
           </div>
         </div>
       ) : (
-        // DESKTOP
+        // DESKTOP: Canvas a pantalla completa y overlays
         <div className="relative w-full h-full">
-          {/* Canvas a pantalla completa */}
           <Canvas className="absolute inset-0" camera={{ position: initialCameraPos, fov: 40 }}>
             <ambientLight intensity={0.5} />
             <directionalLight position={[10, 10, 5]} intensity={1.5} />
@@ -133,22 +136,22 @@ const LandingPage: React.FC = () => {
             />
             <AnimatedCamera target={cameraTarget} />
           </Canvas>
-          {/* Overlays */}
           <OrganigramaPanel show={showOrganigramaPanel} mobile={false} />
           <EventsPanel show={showEventsPanel} mobile={false} />
         </div>
       )}
 
-      {/* Logo FUNDACOR */}
-      {!(isMobileOrTablet && showOrganigramaPanel) && (
-        <div className="absolute top-4 left-4 z-50">
-          <span className="text-xl font-bold text-gray-800 font-renogare">FUNDACOR</span>
+
+      {/* Logo FUNDACOR (arriba izquierda) */}
+      {!((isMobileOrTablet && showOrganigramaPanel) || (!isMobileOrTablet && showOrganigramaPanel)) && (
+        <div className="absolute top-2 left-2 z-50 bg-white/10 p-2 rounded-lg shadow-md">
+          <img src={'/LogoFUNDACOR.svg'} alt="Logo" className="w-20" />
         </div>
       )}
-
-      {/* Footer */}
       
     </div>
+
+
   );
 };
 

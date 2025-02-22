@@ -75,6 +75,7 @@ const Model: React.FC<ModelProps> = ({
       rotation-x={rotation.rotationX}
       rotation-y={rotation.rotationY}
       rotation-z={rotation.rotationZ}
+      
     >
       <primitive object={nodes.Curve002} />
       <primitive object={nodes.Curve004} />
