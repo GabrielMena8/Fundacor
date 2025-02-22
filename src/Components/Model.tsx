@@ -9,6 +9,7 @@ import { ModelProps, GLTFResult } from '../Types/modelTypes';
 import { ThreeEvent } from '@react-three/fiber';
 
 const Model: React.FC<ModelProps> = ({
+  onTopClick,
   onLeftClick,
   onRightClick,
   rotation,
@@ -19,48 +20,62 @@ const Model: React.FC<ModelProps> = ({
   const groupRef = useRef<THREE.Group>(null);
   const gemRef = useRef<THREE.Mesh>(null);
 
+  // Clonamos el material de la gema para no compartir referencias
   useEffect(() => {
-    // Clonamos material de la gema
     if (nodes.Curve003?.material) {
       (nodes.Curve003.material as MeshStandardMaterial) =
         (nodes.Curve003.material as MeshStandardMaterial).clone();
     }
   }, [nodes]);
 
+  // Centramos el modelo y aplicamos un offset en Y
   useEffect(() => {
     if (groupRef.current) {
-      // Centrar el modelo en el origen
       const box = new Box3().setFromObject(groupRef.current);
       const center = new Vector3();
       box.getCenter(center);
       groupRef.current.position.sub(center);
-
-      // Ajustar un offset en Y para que la corona se vea centrada verticalmente
-     
-      // Ajusta este valor según necesites
+      //groupRef.current.position.y -= 0.5; // Ajusta este valor según convenga
     }
   }, [scene]);
 
-  // Manejo de color de la gema (opcional)
+  // Estado para el color de la gema (opcional)
   const [gemColor, setGemColor] = useState('#FFFF00');
 
   const handleGemClick = (event: ThreeEvent<MouseEvent>) => {
     if (disableInteractivity) return;
     event.stopPropagation();
-    // Cambia color de ejemplo
-    setGemColor(prev => (prev === '#FFFF00' ? '#FF0000' : '#FFFF00'));
 
-    // Detectamos la parte izquierda/derecha
+    // Alterna color (ejemplo)
+    setGemColor(prev => (prev === '#FFFF00' ? '#1F322E' : '#FFFF00'));
+
     if (!gemRef.current) return;
     const intersection = event.intersections[0];
     if (!intersection) return;
     const localPoint = gemRef.current.worldToLocal(intersection.point.clone());
-    if (localPoint.x < 0) {
+    console.log('Local point:', localPoint);
+    // Punto central aproximado para la parte superior
+    const targetPoint = {
+      x: -0.12939901825966277,
+      y: 0.4399999678134901,
+      z: -1.9852197650435117
+    };
+    
+    const tolerance = 0.1; // Ajusta este valor según necesites
+    
+    // Primero verificamos si es un clic en la parte superior
+    if (Math.abs(localPoint.x - targetPoint.x) < tolerance &&
+      Math.abs(localPoint.y - targetPoint.y) < tolerance &&
+      Math.abs(localPoint.z - targetPoint.z) < tolerance) {
+      if (onTopClick) onTopClick();
+    } 
+    // Si no es la parte superior, verificamos los lados usando la coordenada X
+    else if (localPoint.x < -0.1) { // Ajusta este valor según necesites
       if (onLeftClick) onLeftClick();
-    } else {
+    } else if (localPoint.x > 0.1) { // Ajusta este valor según necesites
       if (onRightClick) onRightClick();
     }
-  };
+    };
 
   useEffect(() => {
     if (gemRef.current) {
@@ -75,15 +90,10 @@ const Model: React.FC<ModelProps> = ({
       rotation-x={rotation.rotationX}
       rotation-y={rotation.rotationY}
       rotation-z={rotation.rotationZ}
-      
     >
       <primitive object={nodes.Curve002} />
       <primitive object={nodes.Curve004} />
-      <primitive
-        object={nodes.Curve003}
-        ref={gemRef}
-        onClick={handleGemClick}
-      />
+      <primitive object={nodes.Curve003} ref={gemRef} onClick={handleGemClick} />
     </a.group>
   );
 };

@@ -7,29 +7,30 @@ import Model from '../Components/Model';
 import AnimatedCamera from '../Components/AnimatedCamera';
 import EventsPanel from '../Components/EventsPanel';
 import OrganigramaPanel from '../Components/OrganigramaPanel';
+import MissionVisionPanel from '../Components/MissionVisionPanel';
 import { useMediaQuery } from '../Hooks/useMediaQuery';
 import { ModelRotationProps } from '../Types/modelTypes';
 
 const LandingPage: React.FC = () => {
   const isMobileOrTablet = useMediaQuery('(max-width: 768px)');
 
-  // Ajustes de cámara
+  // Posiciones de cámara
   const initialCameraPosMobile: [number, number, number] = [0, 0, 15];
   const initialCameraPosDesktop: [number, number, number] = [0, 1, 15];
 
-  // Posiciones para overlays en desktop
+  // Overlays en desktop
   const alternativeCameraPosRight: [number, number, number] = [4, 1, 12];
   const alternativeCameraPosLeft: [number, number, number] = [-4, 1, 12];
+  const alternativeCameraPosTop: [number, number, number] = [0, 4, 12];
 
-  // Selecciona posición inicial según dispositivo
   const initialCameraPos = isMobileOrTablet ? initialCameraPosMobile : initialCameraPosDesktop;
 
-  // Estados para overlays (solo en desktop)
+  // Estados para overlays en desktop
   const [cameraTarget, setCameraTarget] = useState<[number, number, number]>(initialCameraPos);
   const [showEventsPanel, setShowEventsPanel] = useState(false);
   const [showOrganigramaPanel, setShowOrganigramaPanel] = useState(false);
+  const [showMissionVisionPanel, setShowMissionVisionPanel] = useState(false);
 
-  // Animación de la corona con react-spring
   const [springs, api] = useSpring(() => ({
     rotationX: Math.PI / 2,
     rotationY: 0,
@@ -37,11 +38,36 @@ const LandingPage: React.FC = () => {
     config: { mass: 1, tension: 50, friction: 20 },
   }));
 
-  // Clic izquierdo -> Organigrama
+  // Handler para clic en la parte superior -> Misión y Visión
+  const handleTopClick = () => {
+    if (isMobileOrTablet) {
+      setShowMissionVisionPanel(true);
+      // Opcional: ocultar otros paneles
+      setShowOrganigramaPanel(false);
+      setShowEventsPanel(false);
+    } else {
+      const isAlternative = showMissionVisionPanel;
+      if (isAlternative) {
+        setCameraTarget(initialCameraPos);
+        setShowMissionVisionPanel(false);
+        api.start({ rotationX: Math.PI / 2 });
+      } else {
+        setCameraTarget(alternativeCameraPosTop);
+        setShowMissionVisionPanel(true);
+        setShowOrganigramaPanel(false);
+        setShowEventsPanel(false);
+        // Para misión/visión, sin rotación en Z (o ajusta si lo prefieres)
+        api.start({ rotationX: Math.PI / 6 });
+      }
+    }
+  };
+
+  // Handler para clic en la parte izquierda -> Organigrama
   const handleLeftClick = () => {
     if (isMobileOrTablet) {
       setShowOrganigramaPanel(true);
       setShowEventsPanel(false);
+      setShowMissionVisionPanel(false);
     } else {
       const isAlternative =
         cameraTarget[0] === alternativeCameraPosLeft[0] &&
@@ -55,16 +81,18 @@ const LandingPage: React.FC = () => {
         setCameraTarget(alternativeCameraPosLeft);
         setShowOrganigramaPanel(true);
         setShowEventsPanel(false);
+        setShowMissionVisionPanel(false);
         api.start({ rotationZ: Math.PI / 6 });
       }
     }
   };
 
-  // Clic derecho -> Eventos
+  // Handler para clic en la parte derecha -> Eventos
   const handleRightClick = () => {
     if (isMobileOrTablet) {
       setShowEventsPanel(true);
       setShowOrganigramaPanel(false);
+      setShowMissionVisionPanel(false);
     } else {
       const isAlternative =
         cameraTarget[0] === alternativeCameraPosRight[0] &&
@@ -78,21 +106,20 @@ const LandingPage: React.FC = () => {
         setCameraTarget(alternativeCameraPosRight);
         setShowEventsPanel(true);
         setShowOrganigramaPanel(false);
+        setShowMissionVisionPanel(false);
         api.start({ rotationZ: -Math.PI / 6 });
       }
     }
   };
 
-  // Rotaciones animadas
   const modelRotation: ModelRotationProps = {
     rotationX: springs.rotationX,
     rotationY: springs.rotationY,
     rotationZ: springs.rotationZ,
   };
 
-  // Escala del modelo (puedes ajustar a tu gusto)
+  // Escala del modelo: en mobile 0.75, en desktop 1
   const modelScale = isMobileOrTablet ? 0.75 : 1;
-
   return (
     <div className="w-screen h-screen bg-gray-50 relative font-caviardreams">
       {isMobileOrTablet ? (
@@ -106,6 +133,7 @@ const LandingPage: React.FC = () => {
               <Model
                 onLeftClick={handleLeftClick}
                 onRightClick={handleRightClick}
+                onTopClick={handleTopClick}
                 rotation={modelRotation}
                 scale={modelScale}
                 disableInteractivity={false}
@@ -119,6 +147,9 @@ const LandingPage: React.FC = () => {
             <EventsPanel show={true} mobile={true} />
             {/* Sección de Organigrama */}
             <OrganigramaPanel show={true} mobile={true} />
+
+            {/* Sección de Misión y Visión */}
+            <MissionVisionPanel show={true} mobile={true} />
           </div>
         </div>
       ) : (
@@ -131,6 +162,7 @@ const LandingPage: React.FC = () => {
             <Model
               onLeftClick={handleLeftClick}
               onRightClick={handleRightClick}
+              onTopClick={handleTopClick    }
               rotation={modelRotation}
               scale={modelScale}
             />
@@ -138,6 +170,7 @@ const LandingPage: React.FC = () => {
           </Canvas>
           <OrganigramaPanel show={showOrganigramaPanel} mobile={false} />
           <EventsPanel show={showEventsPanel} mobile={false} />
+          <MissionVisionPanel show={showMissionVisionPanel} mobile={false} />
         </div>
       )}
 

@@ -1,3 +1,4 @@
+// src/Types/modelTypes.ts
 import { SpringValue } from '@react-spring/three';
 import { Mesh, BufferGeometry, MeshStandardMaterial, Group } from 'three';
 
@@ -8,18 +9,11 @@ export interface ModelRotationProps {
 }
 
 export interface ModelProps {
-  /** Se llama al hacer clic en la parte izquierda de la gema */
+  onTopClick: () => void;
   onLeftClick: () => void;
-  /** Se llama al hacer clic en la parte derecha de la gema */
   onRightClick: () => void;
-
-  /** Rotaciones animadas con react-spring */
   rotation: ModelRotationProps;
-
-  /** Factor de escala (opcional) */
   scale?: number;
-
-  /** Para deshabilitar la interactividad en móviles o cuando lo requieras */
   disableInteractivity?: boolean;
 }
 

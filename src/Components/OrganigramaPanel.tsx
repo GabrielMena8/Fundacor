@@ -10,7 +10,7 @@ const OrganigramaPanel: React.FC<OrganigramaPanelProps> = ({ show, mobile }) => 
     if (mobile) {
         return (
             <div className="bg-[#1f322e] text-white p-6 font-caviardreams">
-                <h2 className="text-2xl font-renogare mb-4 text-[#ffdd08]">FUNDACOR</h2>
+                <h2 className="text-2xl font-renogare mb-4 text-[#ffdd08]">Organización</h2>
                 <div className="overflow-y-auto">
                     <h3 className="text-xl font-semibold mb-3 text-[#ffdd08]">Estructura Organizacional</h3>
                     <p className="text-sm mb-4 leading-relaxed">
@@ -46,7 +46,7 @@ const OrganigramaPanel: React.FC<OrganigramaPanelProps> = ({ show, mobile }) => 
             >
                 <div className="flex text-justify flex-col h-auto  rounded-bl-xl rounded-r-4xl  p-4">
                     <div className="flex-1 p-2  ">
-                        <h2 className="text-2xl text-center font-renogare mb-4 text-[#ffdd08]">FUNDACOR</h2>
+                        <h2 className="text-2xl text-center font-renogare font-bold mb-4 text-[#ffdd08]">¿Quienes somos?</h2>
                         <p className="text-base leading-relaxed mb-6">
                             La estructura organizacional de FUNDACOR está diseñada para maximizar 
                             la eficiencia y el impacto de nuestras iniciativas comunitarias.
