@@ -25,8 +25,11 @@ const LandingPage: React.FC = () => {
 
   const initialCameraPos = isMobileOrTablet ? initialCameraPosMobile : initialCameraPosDesktop;
 
-  // Estados para overlays
+  // ---------------- ESTADOS ----------------
+  // Control de la posición de la cámara
   const [cameraTarget, setCameraTarget] = useState<[number, number, number]>(initialCameraPos);
+
+  // Estados para overlays
   const [showEventsPanel, setShowEventsPanel] = useState(false);
   const [showOrganigramaPanel, setShowOrganigramaPanel] = useState(false);
   const [showMissionVisionPanel, setShowMissionVisionPanel] = useState(false);
@@ -40,7 +43,7 @@ const LandingPage: React.FC = () => {
     }
   }, [isMobileOrTablet]);
 
-  // Animaciones de rotación
+  // Animaciones de rotación (modelo)
   const [springs, api] = useSpring(() => ({
     rotationX: Math.PI / 2,
     rotationY: 0,
@@ -117,7 +120,7 @@ const LandingPage: React.FC = () => {
     }
   };
 
-  // Prop para rotaciones
+  // Propiedades de rotación para pasarle al <Model />
   const modelRotation: ModelRotationProps = {
     rotationX: springs.rotationX,
     rotationY: springs.rotationY,
@@ -130,7 +133,7 @@ const LandingPage: React.FC = () => {
   return (
     <div className="w-screen h-screen bg-gradient-to-b from-[#f4e7e7] to-[#F5F5F5] relative font-caviardreams">
       {isMobileOrTablet ? (
-        // MOBILE
+        // ---------------- MÓVIL/TABLET ----------------
         <div className="flex flex-col h-full">
           <div className="w-full h-1/2">
             <Canvas className="w-full h-full" camera={{ position: initialCameraPos, fov: 40 }}>
@@ -148,14 +151,16 @@ const LandingPage: React.FC = () => {
               <AnimatedCamera target={cameraTarget} />
             </Canvas>
           </div>
+
+          {/* Render condicional de paneles según estado */}
           <div className="w-full flex flex-col">
-            <EventsPanel show={true} mobile={true} />
-            <OrganigramaPanel show={true} mobile={true} />
-            <MissionVisionPanel show={true} mobile={true} />
+            {showEventsPanel && <EventsPanel show={true} mobile={true} />}
+            {showOrganigramaPanel && <OrganigramaPanel show={true} mobile={true} />}
+            {showMissionVisionPanel && <MissionVisionPanel show={true} mobile={true} />}
           </div>
         </div>
       ) : (
-        // DESKTOP
+        // ---------------- DESKTOP ----------------
         <div className="relative w-full h-full">
           <Canvas className="absolute inset-0" camera={{ position: initialCameraPos, fov: 40 }}>
             <ambientLight intensity={0.5} />
@@ -180,10 +185,10 @@ const LandingPage: React.FC = () => {
 
       {/* Logo y tooltip cuando no hay panel abierto */}
       {!(showOrganigramaPanel || showEventsPanel || showMissionVisionPanel) && (
-        <div className="absolute top-2 left-2 z-50 flex items-center space-x-2 bg-white/20 px-3 py-1 rounded shadow-lg">
-          <img src="/LogoFUNDACOR.svg" alt="Logo" className="w-16" />
+        <div className="absolute top-2 left-2 z-50 flex items-center space-x-2 bg-white/20 px-3 pb-4 rounded shadow-lg">
+          <img src="/LogoFUNDACOR.svg" alt="Logo" className="w-32 " />
           {!isMobileOrTablet && showTooltip && (
-            <span className="font-renogare text-sm text-[#1F322E] bg-[#FFDD08] px-2 py-1 rounded">
+            <span className="font-renogare text-sm text-[#1F322E]  px-2 py-1 rounded">
               Haz clic en la gema para explorar
             </span>
           )}
