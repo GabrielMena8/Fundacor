@@ -3,35 +3,40 @@ import React from 'react';
 import EventCard from './EventCard';
 
 export type EventItem = {
+  id: string;          // ← Agregamos un id para enlazar al detalle
   image: string;
   title: string;
   description: string;
 };
 
-// Esta definición de eventos la puedes extraer a un archivo JSON o cargarla
-// desde una API externa, permitiendo actualizar los datos sin modificar el componente.
+// Datos de ejemplo, cada evento con un id único:
 const events: EventItem[] = [
   {
+    id: 'evento1',
     image: '/Eventos/Evento1.webp',
     title: 'Evento 1',
     description: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit.',
   },
   {
+    id: 'evento2',
     image: '/Eventos/Evento2.webp',
     title: 'Evento 2',
     description: 'Suspendisse potenti. Nulla quis lorem libero.',
   },
   {
+    id: 'evento3',
     image: '/Eventos/Evento3.webp',
     title: 'Evento 3',
     description: 'Curabitur ac felis at dolor tincidunt suscipit.',
   },
   {
+    id: 'evento4',
     image: '/Eventos/Evento2.webp',
     title: 'Evento 4',
     description: 'Otro evento para verificar el scroll en móvil.',
   },
   {
+    id: 'evento5',
     image: '/Eventos/Evento1.webp',
     title: 'Evento 5',
     description: 'Otro evento para verificar el scroll en móvil.',
@@ -52,8 +57,9 @@ const EventsPanel: React.FC<EventsPanelProps> = ({ show, mobile }) => {
         </h2>
         <div className="overflow-y-auto h-[calc(100%-4rem)]">
           <div className="space-y-4">
-            {events.map((ev, idx) => (
-              <EventCard key={idx} {...ev} />
+            {events.map((ev) => (
+              // Pasamos todas las propiedades: id, image, title, description
+              <EventCard key={ev.id} {...ev} />
             ))}
           </div>
         </div>
@@ -76,8 +82,8 @@ const EventsPanel: React.FC<EventsPanelProps> = ({ show, mobile }) => {
             Eventos Fundación Coromotana
           </h2>
           <div className="grid grid-cols-1 gap-4 mb-6">
-            {events.map((ev, idx) => (
-              <EventCard key={idx} {...ev} />
+            {events.map((ev) => (
+              <EventCard key={ev.id} {...ev} />
             ))}
           </div>
         </div>

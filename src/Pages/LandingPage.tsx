@@ -14,25 +14,30 @@ import { ModelRotationProps } from '../Types/modelTypes';
 const LandingPage: React.FC = () => {
   const isMobileOrTablet = useMediaQuery('(max-width: 768px)');
 
-  // Posiciones de cámara (sin modificar el tamaño de la corona)
+  // -------- POSICIONES DE CÁMARA --------
   const initialCameraPosMobile: [number, number, number] = [0, 0, 15];
   const initialCameraPosDesktop: [number, number, number] = [0, 1, 15];
 
-  // Para desktop, mantenemos los targets originales
   const alternativeCameraPosRight: [number, number, number] = [4, 1, 12];
   const alternativeCameraPosLeft: [number, number, number] = [-4, 1, 12];
   const alternativeCameraPosTop: [number, number, number] = [0, 4, 12];
 
-  const initialCameraPos = isMobileOrTablet ? initialCameraPosMobile : initialCameraPosDesktop;
+  const initialCameraPos = isMobileOrTablet
+    ? initialCameraPosMobile
+    : initialCameraPosDesktop;
 
-  // ---------------- ESTADOS ----------------
-  // Control de la posición de la cámara
-  const [cameraTarget, setCameraTarget] = useState<[number, number, number]>(initialCameraPos);
+  // -------- ESTADOS DE INTERFAZ --------
+  const [cameraTarget, setCameraTarget] = useState<[number, number, number]>(
+    initialCameraPos
+  );
 
-  // Estados para overlays
   const [showEventsPanel, setShowEventsPanel] = useState(false);
   const [showOrganigramaPanel, setShowOrganigramaPanel] = useState(false);
   const [showMissionVisionPanel, setShowMissionVisionPanel] = useState(false);
+
+  // Para saber si ya hay algún panel abierto
+  const isAnyPanelOpen =
+    showEventsPanel || showOrganigramaPanel || showMissionVisionPanel;
 
   // Tooltip (solo desktop)
   const [showTooltip, setShowTooltip] = useState(true);
@@ -43,31 +48,98 @@ const LandingPage: React.FC = () => {
     }
   }, [isMobileOrTablet]);
 
-  // Animaciones de rotación (modelo)
+  // -------- ANIMACIÓN DE ROTACIÓN DEL MODELO --------
   const [springs, api] = useSpring(() => ({
-    rotationX: Math.PI / 2,
+    rotationX: Math.PI / 2, // Rotación inicial
     rotationY: 0,
     rotationZ: 0,
     config: { mass: 1, tension: 50, friction: 20 },
   }));
 
-  // ---------------- HANDLERS ----------------
+  // Función que resetea el modelo a su rotación/cámara inicial:
+  const resetToInitialState = () => {
+    // Cierra todos los paneles
+    setShowEventsPanel(false);
+    setShowOrganigramaPanel(false);
+    setShowMissionVisionPanel(false);
+
+    // Devuelve la corona a la rotación inicial
+    api.start({
+      rotationX: Math.PI / 2,
+      rotationY: 0,
+      rotationZ: 0,
+    });
+
+    // Cámara a la posición inicial
+    setCameraTarget(initialCameraPos);
+  };
+
+  // Funciones para abrir cada panel, con su respectiva rotación/cámara
+  const openMissionVision = () => {
+    setShowMissionVisionPanel(true);
+    setShowOrganigramaPanel(false);
+    setShowEventsPanel(false);
+
+    setCameraTarget(alternativeCameraPosTop);
+    api.start({
+      rotationX: Math.PI / 6, // Corona algo inclinada
+      rotationY: 0,
+      rotationZ: 0,
+    });
+  };
+
+  const openOrganigrama = () => {
+    setShowOrganigramaPanel(true);
+    setShowEventsPanel(false);
+    setShowMissionVisionPanel(false);
+
+    setCameraTarget(alternativeCameraPosLeft);
+    api.start({
+      rotationX: Math.PI / 2,
+      rotationY: 0,
+      rotationZ: Math.PI / 6,
+    });
+  };
+
+  const openEvents = () => {
+    setShowEventsPanel(true);
+    setShowOrganigramaPanel(false);
+    setShowMissionVisionPanel(false);
+
+    setCameraTarget(alternativeCameraPosRight);
+    api.start({
+      rotationX: Math.PI / 2,
+      rotationY: 0,
+      rotationZ: -Math.PI / 6,
+    });
+  };
+
+  // -------- HANDLERS --------
   const handleTopClick = () => {
     if (isMobileOrTablet) {
+      // Mobile: abrimos directamente (sin animaciones intermedias)
       setShowMissionVisionPanel(true);
       setShowOrganigramaPanel(false);
       setShowEventsPanel(false);
+      return;
+    }
+
+    // Desktop
+    if (showMissionVisionPanel) {
+      // Misión/Visión ya está abierto => Cerrarlo y reset
+      resetToInitialState();
     } else {
-      if (showMissionVisionPanel) {
-        setCameraTarget(initialCameraPos);
-        setShowMissionVisionPanel(false);
-        api.start({ rotationX: Math.PI / 2 });
+      // Si hay otro panel abierto (Organigrama/Events), primero reset
+      if (isAnyPanelOpen) {
+        resetToInitialState();
+        // Esperar un breve lapso para que se complete la animación de reset,
+        // luego abrir Misión/Visión
+        setTimeout(() => {
+          openMissionVision();
+        }, 600); // medio segundo, por ejemplo
       } else {
-        setCameraTarget(alternativeCameraPosTop);
-        setShowMissionVisionPanel(true);
-        setShowOrganigramaPanel(false);
-        setShowEventsPanel(false);
-        api.start({ rotationX: Math.PI / 6 });
+        // No hay panel abierto => abrir Misión/Visión inmediatamente
+        openMissionVision();
       }
     }
   };
@@ -77,21 +149,21 @@ const LandingPage: React.FC = () => {
       setShowOrganigramaPanel(true);
       setShowEventsPanel(false);
       setShowMissionVisionPanel(false);
+      return;
+    }
+
+    if (showOrganigramaPanel) {
+      // Organigrama ya abierto => Cerrar y reset
+      resetToInitialState();
     } else {
-      const isAlternative =
-        cameraTarget[0] === alternativeCameraPosLeft[0] &&
-        cameraTarget[2] === alternativeCameraPosLeft[2] &&
-        showOrganigramaPanel;
-      if (isAlternative) {
-        setCameraTarget(initialCameraPos);
-        setShowOrganigramaPanel(false);
-        api.start({ rotationZ: 0 });
+      // Si hay otro panel abierto
+      if (isAnyPanelOpen) {
+        resetToInitialState();
+        setTimeout(() => {
+          openOrganigrama();
+        }, 600);
       } else {
-        setCameraTarget(alternativeCameraPosLeft);
-        setShowOrganigramaPanel(true);
-        setShowEventsPanel(false);
-        setShowMissionVisionPanel(false);
-        api.start({ rotationZ: Math.PI / 6 });
+        openOrganigrama();
       }
     }
   };
@@ -101,35 +173,35 @@ const LandingPage: React.FC = () => {
       setShowEventsPanel(true);
       setShowOrganigramaPanel(false);
       setShowMissionVisionPanel(false);
+      return;
+    }
+
+    if (showEventsPanel) {
+      // Eventos ya abierto => Cerrar y reset
+      resetToInitialState();
     } else {
-      const isAlternative =
-        cameraTarget[0] === alternativeCameraPosRight[0] &&
-        cameraTarget[2] === alternativeCameraPosRight[2] &&
-        showEventsPanel;
-      if (isAlternative) {
-        setCameraTarget(initialCameraPos);
-        setShowEventsPanel(false);
-        api.start({ rotationZ: 0 });
+      // Otro panel estaba abierto => reset, luego abrir
+      if (isAnyPanelOpen) {
+        resetToInitialState();
+        setTimeout(() => {
+          openEvents();
+        }, 600);
       } else {
-        setCameraTarget(alternativeCameraPosRight);
-        setShowEventsPanel(true);
-        setShowOrganigramaPanel(false);
-        setShowMissionVisionPanel(false);
-        api.start({ rotationZ: -Math.PI / 6 });
+        openEvents();
       }
     }
   };
 
-  // Propiedades de rotación para pasarle al <Model />
+  // -------- PROPS PARA EL MODELO --------
   const modelRotation: ModelRotationProps = {
     rotationX: springs.rotationX,
     rotationY: springs.rotationY,
     rotationZ: springs.rotationZ,
   };
 
-  // Escala del modelo
   const modelScale = isMobileOrTablet ? 0.75 : 1;
 
+  // -------- RENDER --------
   return (
     <div className="w-screen h-screen bg-gradient-to-b from-[#f4e7e7] to-[#F5F5F5] relative font-caviardreams">
       {isMobileOrTablet ? (
@@ -184,11 +256,11 @@ const LandingPage: React.FC = () => {
       )}
 
       {/* Logo y tooltip cuando no hay panel abierto */}
-      {!(showOrganigramaPanel || showEventsPanel || showMissionVisionPanel) && (
-        <div className="absolute top-2 left-2 z-50 flex items-center space-x-2 bg-white/20 px-3 pb-4 rounded shadow-lg">
-          <img src="/LogoFUNDACOR.svg" alt="Logo" className="w-32 " />
+      {!isAnyPanelOpen && (
+        <div className="absolute top-2 left-2 z-50 flex items-center space-x-2 bg-white/20 px-4 pb-4 rounded-xl shadow-lg">
+          <img src="/LogoFUNDACOR.svg" alt="Logo" className="w-36" />
           {!isMobileOrTablet && showTooltip && (
-            <span className="font-renogare text-sm text-[#1F322E]  px-2 py-1 rounded">
+            <span className="font-renogare text-sm text-[#1F322E] bg-[#FFDD08] px-2 py-1 rounded">
               Haz clic en la gema para explorar
             </span>
           )}
