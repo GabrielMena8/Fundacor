@@ -1,10 +1,9 @@
 // src/Components/Model.tsx
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { useGLTF } from '@react-three/drei';
 import { a } from '@react-spring/three';
 import * as THREE from 'three';
-import { Color, Box3, Vector3 } from 'three';
-import { MeshStandardMaterial } from 'three';
+import { MeshStandardMaterial, Box3, Vector3 } from 'three';
 import { ModelProps, GLTFResult } from '../Types/modelTypes';
 import { ThreeEvent } from '@react-three/fiber';
 
@@ -20,68 +19,52 @@ const Model: React.FC<ModelProps> = ({
   const groupRef = useRef<THREE.Group>(null);
   const gemRef = useRef<THREE.Mesh>(null);
 
-  // Clonamos el material de la gema para no compartir referencias
+  // Clonamos el material de la gema para evitar compartir referencias y modificarla accidentalmente.
   useEffect(() => {
     if (nodes.Curve003?.material) {
-      (nodes.Curve003.material as MeshStandardMaterial) =
-        (nodes.Curve003.material as MeshStandardMaterial).clone();
+      nodes.Curve003.material = (nodes.Curve003.material as MeshStandardMaterial).clone();
     }
   }, [nodes]);
 
-  // Centramos el modelo y aplicamos un offset en Y
+  // Centramos el modelo a partir de su caja delimitadora.
   useEffect(() => {
     if (groupRef.current) {
       const box = new Box3().setFromObject(groupRef.current);
       const center = new Vector3();
       box.getCenter(center);
       groupRef.current.position.sub(center);
-      //groupRef.current.position.y -= 0.5; // Ajusta este valor según convenga
     }
   }, [scene]);
 
-  // Estado para el color de la gema (opcional)
-  const [gemColor, setGemColor] = useState('#FFFF00');
+  const isWithinTolerance = (a: number, b: number, tolerance: number): boolean =>
+    Math.abs(a - b) < tolerance;
 
   const handleGemClick = (event: ThreeEvent<MouseEvent>) => {
     if (disableInteractivity) return;
     event.stopPropagation();
 
-    // Alterna color (ejemplo)
-    setGemColor(prev => (prev === '#FFFF00' ? '#1F322E' : '#FFFF00'));
-
     if (!gemRef.current) return;
     const intersection = event.intersections[0];
     if (!intersection) return;
+
     const localPoint = gemRef.current.worldToLocal(intersection.point.clone());
     console.log('Local point:', localPoint);
-    // Punto central aproximado para la parte superior
-    const targetPoint = {
-      x: -0.12939901825966277,
-      y: 0.4399999678134901,
-      z: -1.9852197650435117
-    };
-    
-    const tolerance = 0.1; // Ajusta este valor según necesites
-    
-    // Primero verificamos si es un clic en la parte superior
-    if (Math.abs(localPoint.x - targetPoint.x) < tolerance &&
-      Math.abs(localPoint.y - targetPoint.y) < tolerance &&
-      Math.abs(localPoint.z - targetPoint.z) < tolerance) {
-      if (onTopClick) onTopClick();
-    } 
-    // Si no es la parte superior, verificamos los lados usando la coordenada X
-    else if (localPoint.x < -0.1) { // Ajusta este valor según necesites
-      if (onLeftClick) onLeftClick();
-    } else if (localPoint.x > 0.1) { // Ajusta este valor según necesites
-      if (onRightClick) onRightClick();
-    }
-    };
 
-  useEffect(() => {
-    if (gemRef.current) {
-      (gemRef.current.material as MeshStandardMaterial).color.set(new Color(gemColor));
+    const targetTop = { x: -0.1294, y: 0.44, z: -1.9852 };
+    const tolerance = 0.1;
+
+    if (
+      isWithinTolerance(localPoint.x, targetTop.x, tolerance) &&
+      isWithinTolerance(localPoint.y, targetTop.y, tolerance) &&
+      isWithinTolerance(localPoint.z, targetTop.z, tolerance)
+    ) {
+      onTopClick?.();
+    } else if (localPoint.x < -0.1) {
+      onLeftClick?.();
+    } else if (localPoint.x > 0.1) {
+      onRightClick?.();
     }
-  }, [gemColor]);
+  };
 
   return (
     <a.group
@@ -93,9 +76,15 @@ const Model: React.FC<ModelProps> = ({
     >
       <primitive object={nodes.Curve002} />
       <primitive object={nodes.Curve004} />
-      <primitive object={nodes.Curve003} ref={gemRef} onClick={handleGemClick} />
+      <primitive
+        object={nodes.Curve003}
+        ref={gemRef}
+        onClick={handleGemClick}
+        className="gem-interactive"  // Se aplica la clase para efecto hover
+      />
     </a.group>
   );
 };
 
 export default Model;
+

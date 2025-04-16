@@ -1,41 +1,43 @@
 @import "tailwindcss";
 
-@font-face {
-    font-family: 'Renogare';
-    src: url('/public/Fonts/Renogare-Regular') format('otf');
-    font-weight: normal;
-    font-style: normal;
-}
+/* Declaración de las fuentes personalizadas */
 
 @font-face {
-    font-family: 'CaviarDreams';
-    src: url('/public/Fonts/CaviarDreams.ttf') format('ttf');
-    font-weight: bold;
-    font-style: normal;
+  font-family: 'Renogare';
+  /* Asegúrate de que el archivo se encuentre en la carpeta /public/Fonts y de incluir la extensión */
+  src: url('/Fonts/Renogare-Regular.otf') format('opentype');
+  font-weight: normal;
+  font-style: normal;
 }
 
-
-@theme{
-    --font-caviar: 'CaviarDreams', sans-serif;
-    --font-renogare: 'Renogare', sans-serif;
+@font-face {
+  font-family: 'CaviarDreams';
+  src: url('/Fonts/CaviarDreams.ttf') format('truetype');
+  font-weight: bold;
+  font-style: normal;
 }
 
+/* Declaración de variables CSS para las fuentes */
+/* Es preferible definirlas dentro de :root para que sean accesibles globalmente */
+:root {
+  --font-caviar: 'CaviarDreams', sans-serif;
+  --font-renogare: 'Renogare', sans-serif;
+}
 
+/* Clases para ocultar la scrollbar en contenedores */
 .scrollbar-hide {
-    -ms-overflow-style: none;  /* IE and Edge */
-    scrollbar-width: none;     /* Firefox */
-  }
-  
-  .scrollbar-hide::-webkit-scrollbar {
-    display: none;             /* Chrome, Safari, Opera */
-  }
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;     /* Firefox */
+}
 
-  .scrollbar-hide::-webkit-scrollbar-thumb {
-    display: none;             /* Chrome, Safari, Opera */
-  }
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;             /* Chrome, Safari and Opera */
+}
 
-    .scrollbar-hide::-webkit-scrollbar-track {
-        display: none;             /* Chrome, Safari, Opera */
-    }
+.scrollbar-hide::-webkit-scrollbar-thumb {
+  display: none;
+}
 
-    
+.scrollbar-hide::-webkit-scrollbar-track {
+  display: none;
+}
