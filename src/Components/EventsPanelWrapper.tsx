@@ -16,7 +16,7 @@ const EventsPanelWrapper: React.FC<EventsPanelWrapperProps> = ({ show, mobile })
         // Para móviles: el contenedor ocupa la mitad inferior
         return (
             <div className={`w-full h-1/2 min-h-0 bg-gradient-to-t from-[#1F322E]/80 to-transparent ${commonClasses}`}>
-                <EventsPanel show={true} />
+                <EventsPanel show={true} mobile={false} />
             </div>
         );
     } else {
@@ -28,7 +28,7 @@ const EventsPanelWrapper: React.FC<EventsPanelWrapperProps> = ({ show, mobile })
                 } bg-gradient-to-l from-[#1F322E]/80 to-transparent ${commonClasses}`}
                 style={{ overflowY: "auto" }}
             >
-                <EventsPanel show={true} />
+                <EventsPanel show={true} mobile={false}  />
             </div>
         );
     }
