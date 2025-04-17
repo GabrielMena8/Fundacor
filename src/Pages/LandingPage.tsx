@@ -10,12 +10,51 @@ import OrganigramaPanel from '../Components/OrganigramaPanel';
 import MissionVisionPanel from '../Components/MissionVisionPanel';
 import { useMediaQuery } from '../Hooks/useMediaQuery';
 import { ModelRotationProps } from '../Types/modelTypes';
+import { sharedStyles } from '../styles/sharedStyles';
+
+// SVG logo path for background pattern
+const logoBackgroundUrl = "/LogoFUNDACOR.svg";
+
+const Loader: React.FC = () => {
+  return (
+    <div className="fixed inset-0 bg-gradient-to-l from-[#1f322e]/50 via-[#2A433E]/40 to-[#3B544A]/30 backdrop-blur-sm flex items-center justify-center z-50">
+      <div className="flex flex-col items-center">
+        <div className="w-16 h-16 border-4 border-[#FFDD08]/80 border-t-transparent rounded-full animate-spin mb-4"></div>
+        <div className={`${sharedStyles.titleText} text-xl opacity-80`}>Cargando...</div>
+      </div>
+    </div>
+  );
+};
+
+const Tooltip: React.FC<{ show: boolean }> = ({ show }) => {
+  return (
+    <div className={`fixed bottom-8 left-1/2 transform -translate-x-1/2 z-[60] transition-all duration-500 ${show ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4 pointer-events-none'}`}>
+      <div className="bg-[#1f322e]/95 backdrop-blur-md border-2 border-[#FFDD08]/50 rounded-xl p-4 shadow-lg shadow-[#FFDD08]/20">
+        <div className="flex items-center space-x-3">
+          <div className="flex-shrink-0">
+            <svg className="w-6 h-6 text-[#FFDD08]" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+            </svg>
+          </div>
+          <div>
+            <h3 className={`${sharedStyles.importantHeader} text-lg mb-1 ${sharedStyles.titleGlow}`}>¡Explora la Corona!</h3>
+            <p className={`${sharedStyles.bodyText} text-sm`}>
+              Haz clic en los diferentes elementos para descubrir más información
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 const LandingPage: React.FC = () => {
   const isMobileOrTablet = useMediaQuery('(max-width: 768px)');
+  const [isLoading, setIsLoading] = useState(true);
+  const [showTooltip, setShowTooltip] = useState(true);
 
   // -------- POSICIONES DE CÁMARA --------
-  const initialCameraPosMobile: [number, number, number] = [0, 0, 15];
+  const initialCameraPosMobile: [number, number, number] = [0, 0, 15]; // Restore original position
   const initialCameraPosDesktop: [number, number, number] = [0, 1, 15];
 
   const alternativeCameraPosRight: [number, number, number] = [4, 1, 12];
@@ -39,14 +78,16 @@ const LandingPage: React.FC = () => {
   const isAnyPanelOpen =
     showEventsPanel || showOrganigramaPanel || showMissionVisionPanel;
 
-  // Tooltip (solo desktop)
-  const [showTooltip, setShowTooltip] = useState(true);
+  // Loading and tooltip coordination
   useEffect(() => {
-    if (!isMobileOrTablet) {
-      const timer = setTimeout(() => setShowTooltip(false), 4000);
-      return () => clearTimeout(timer);
-    }
-  }, [isMobileOrTablet]);
+    // Set a timeout to remove the loader on both mobile and desktop
+    const timer = setTimeout(() => {
+      setIsLoading(false);
+      setShowTooltip(false);
+    }, 2000);
+    
+    return () => clearTimeout(timer);
+  }, []); // Run once on component mount
 
   // -------- ANIMACIÓN DE ROTACIÓN DEL MODELO --------
   const [springs, api] = useSpring(() => ({
@@ -204,10 +245,34 @@ const LandingPage: React.FC = () => {
   // -------- RENDER --------
   return (
     <div className="w-screen h-screen bg-gradient-to-b from-[#f4e7e7] to-[#F5F5F5] relative font-caviardreams">
+      {isLoading && <Loader />}
+      
+      {/* Copyright disclaimer */}
+      <div className="absolute bottom-2 left-1/2 transform -translate-x-1/2 text-xs text-[#1F322E]/70 text-center z-10 w-full px-4">
+        <p>© 2023 Fundación Coromotana. Todos los derechos reservados.</p>
+        <p className="text-[10px] mt-1">Diseño por Vortex.</p>
+      </div>
+      
+      {/* Show tooltip only if not loading */}
+      {showTooltip && !isLoading && <Tooltip show={showTooltip} />}
+      
       {isMobileOrTablet ? (
         // ---------------- MÓVIL/TABLET ----------------
         <div className="flex flex-col h-full">
-          <div className="w-full h-1/2">
+          {/* SVG Background Pattern */}
+          <div 
+            className="absolute inset-0 z-0 opacity-15" 
+            style={{ 
+              backgroundImage: `url(${logoBackgroundUrl})`,
+              backgroundRepeat: 'repeat',
+              backgroundSize: '200px',
+              backgroundPosition: '30px 30px',
+              filter: 'blur(0.5px)',
+              pointerEvents: 'none'
+            }}
+          />
+          
+          <div className="w-full h-3/5 relative z-10 flex items-center justify-center">
             <Canvas className="w-full h-full" camera={{ position: initialCameraPos, fov: 40 }}>
               <ambientLight intensity={0.5} />
               <directionalLight position={[10, 10, 5]} intensity={1.5} />
@@ -218,23 +283,92 @@ const LandingPage: React.FC = () => {
                 onTopClick={handleTopClick}
                 rotation={modelRotation}
                 scale={modelScale}
-                disableInteractivity={false}
+                disableInteractivity={true}
               />
-              <AnimatedCamera target={cameraTarget} />
+              <AnimatedCamera target={cameraTarget} /> {/* Restore original camera target */}
             </Canvas>
+            
+            {/* Mobile navigation guidance - show more prominent buttons instead */}
+            {!isAnyPanelOpen && (
+              <div className="absolute bottom-4 left-0 right-0 flex justify-center">
+                <div className="bg-[#1F322E]/80 backdrop-blur-sm rounded-full px-5 py-3 flex items-center space-x-3 shadow-lg border border-[#FFDD08]/20">
+                  <div className="text-xs text-center text-white/80">
+                    <span className="text-[#FFDD08] font-renogare">Toca</span> los botones para explorar
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
 
-          {/* Render condicional de paneles según estado */}
+          {/* Mobile navigation buttons - make these more prominent */}
+          {!isAnyPanelOpen && (
+            <div className="absolute bottom-28 left-0 right-0 flex justify-center items-center space-x-6 z-20">
+              <button 
+                onClick={handleLeftClick}
+                className="p-4 bg-[#1F322E]/90 rounded-full shadow-lg border-2 border-[#FFDD08]/50 hover:border-[#FFDD08]/80 transition-all duration-300 active:scale-95"
+                aria-label="Ver organigrama"
+              >
+                <svg className="w-7 h-7 text-[#FFDD08]" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                </svg>
+              </button>
+              <button 
+                onClick={handleTopClick}
+                className="p-4 bg-[#1F322E]/90 rounded-full shadow-lg border-2 border-[#FFDD08]/50 hover:border-[#FFDD08]/80 transition-all duration-300 active:scale-95"
+                aria-label="Ver misión y visión"
+              >
+                <svg className="w-7 h-7 text-[#FFDD08]" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                </svg>
+              </button>
+              <button 
+                onClick={handleRightClick}
+                className="p-4 bg-[#1F322E]/90 rounded-full shadow-lg border-2 border-[#FFDD08]/50 hover:border-[#FFDD08]/80 transition-all duration-300 active:scale-95"
+                aria-label="Ver eventos"
+              >
+                <svg className="w-7 h-7 text-[#FFDD08]" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+              </button>
+            </div>
+          )}
+
+          {/* Render panels */}
           <div className="w-full flex flex-col">
-            {showEventsPanel && <EventsPanel show={true} mobile={true} />}
-            {showOrganigramaPanel && <OrganigramaPanel show={true} mobile={true} />}
-            {showMissionVisionPanel && <MissionVisionPanel show={true} mobile={true} />}
+            <EventsPanel show={showEventsPanel} mobile={true} />
+            <OrganigramaPanel show={showOrganigramaPanel} mobile={true} />
+            <MissionVisionPanel show={showMissionVisionPanel} mobile={true} />
           </div>
+          
+          {/* Show a close button when a panel is open */}
+          {isAnyPanelOpen && (
+            <button 
+              onClick={resetToInitialState}
+              className="fixed top-4 right-4 p-2 bg-[#1F322E]/90 rounded-full shadow-lg border border-[#FFDD08]/30 hover:border-[#FFDD08]/50 transition-all duration-300 z-50"
+            >
+              <svg className="w-5 h-5 text-[#FFDD08]" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          )}
         </div>
       ) : (
         // ---------------- DESKTOP ----------------
         <div className="relative w-full h-full">
-          <Canvas className="absolute inset-0" camera={{ position: initialCameraPos, fov: 40 }}>
+          {/* SVG Background Pattern */}
+          <div 
+            className="absolute inset-0 z-0 opacity-15" 
+            style={{ 
+              backgroundImage: `url(${logoBackgroundUrl})`,
+              backgroundRepeat: 'repeat',
+              backgroundSize: '200px',
+              backgroundPosition: '30px 30px',
+              filter: 'blur(0.5px)',
+              pointerEvents: 'none'
+            }}
+          />
+          
+          <Canvas className="absolute inset-0 z-10" camera={{ position: initialCameraPos, fov: 40 }}>
             <ambientLight intensity={0.5} />
             <directionalLight position={[10, 10, 5]} intensity={1.5} />
             <Environment preset="sunset" />
@@ -244,26 +378,15 @@ const LandingPage: React.FC = () => {
               onTopClick={handleTopClick}
               rotation={modelRotation}
               scale={modelScale}
+              disableInteractivity={isLoading}
             />
             <AnimatedCamera target={cameraTarget} />
           </Canvas>
 
-          {/* Overlays en desktop */}
-          <OrganigramaPanel show={showOrganigramaPanel} mobile={false} />
+          {/* Render panels */}
           <EventsPanel show={showEventsPanel} mobile={false} />
+          <OrganigramaPanel show={showOrganigramaPanel} mobile={false} />
           <MissionVisionPanel show={showMissionVisionPanel} mobile={false} />
-        </div>
-      )}
-
-      {/* Logo y tooltip cuando no hay panel abierto */}
-      {!isAnyPanelOpen && (
-        <div className="absolute top-2 left-2 z-50 flex items-center space-x-2 bg-white/20 px-4 pb-4 rounded-xl shadow-lg">
-          <img src="/LogoFUNDACOR.svg" alt="Logo" className="w-36" />
-          {!isMobileOrTablet && showTooltip && (
-            <span className="font-renogare text-sm text-[#1F322E] bg-[#FFDD08] px-2 py-1 rounded">
-              Haz clic en la gema para explorar
-            </span>
-          )}
         </div>
       )}
     </div>
