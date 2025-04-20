@@ -1,36 +1,63 @@
-// src/Components/MemberCard.tsx
-import React from 'react';
+import { useState } from 'react';
+import { urlFor } from '../lib/sanity';
+import type { Member } from '../Types/sanity';
 
-export type Member = {
-  id: string;
-  name: string;
-  position: string;
-  photo: string;
-};
-
-type MemberCardProps = {
+interface MemberCardProps {
   member: Member;
-};
+}
 
-const MemberCard: React.FC<MemberCardProps> = ({ member }) => {
+export default function MemberCard({ member }: MemberCardProps) {
+  const [imageError, setImageError] = useState(false);
+  const [isImageLoading, setIsImageLoading] = useState(true);
+  
+  const imageUrl = member.image ? urlFor(member.image).toString() : '';
+  
+  const handleImageError = () => {
+    setImageError(true);
+    setIsImageLoading(false);
+  };
+
+  const handleImageLoad = () => {
+    setIsImageLoading(false);
+  };
+  
   return (
-    <div className="group cursor-pointer bg-gradient-to-l from-[#1f322e]/90 via-[#2A433E]/85 to-[#3B544A]/80 border-2 border-[#FFDD08]/50 p-6 rounded-xl shadow-lg text-center transition-all duration-300 hover:border-[#FFDD08] hover:shadow-[#FFDD08]/20 hover:shadow-xl hover:scale-[1.02]">
-      <div className="relative">
-        <div className="absolute inset-0 bg-[#FFDD08]/10 rounded-full blur-xl group-hover:blur-2xl transition-all duration-300"></div>
-        <img
-          src={member.photo}
-          alt={member.name}
-          className="w-36 h-36 object-cover rounded-full border-2 border-[#FFDD08]/50 mx-auto mb-6 shadow-md group-hover:border-[#FFDD08] transition-all duration-300"
-        />
+    <div className="bg-[#1F322E]/90 backdrop-blur-sm rounded-lg overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
+      <div className="relative h-48 overflow-hidden">
+        {isImageLoading && (
+          <div className="absolute inset-0 flex items-center justify-center bg-[#1F322E]/50">
+            <div className="w-8 h-8 border-2 border-[#FFDD08]/80 border-t-transparent rounded-full animate-spin"></div>
+          </div>
+        )}
+        {imageUrl && !imageError ? (
+          <img
+            src={imageUrl}
+            alt={member.name}
+            className={`w-full h-full object-cover transform hover:scale-105 transition-transform duration-700 ${isImageLoading ? 'opacity-0' : 'opacity-100'}`}
+            onError={handleImageError}
+            onLoad={handleImageLoad}
+            loading="lazy"
+          />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center bg-[#1F322E]">
+            <svg className="w-12 h-12 text-[#FFDD08]/50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+            </svg>
+          </div>
+        )}
+        <div className="absolute inset-0 bg-gradient-to-t from-[#0F1A19]/80 to-transparent"></div>
       </div>
-      <h2 className="font-renogare font-bold text-2xl mb-2 text-[#FFDD08] group-hover:text-[#FFDD08]/90 transition-colors duration-300">
-        {member.name}
-      </h2>
-      <p className="font-caviardreams text-[#FFDD08]/80 text-base group-hover:text-[#FFDD08] transition-colors duration-300">
-        {member.position}
-      </p>
+      <div className="p-4 text-white">
+        <h3 className="text-lg font-semibold mb-1">{member.name}</h3>
+        <p className="text-[#FFDD08] text-sm mb-2">{member.role}</p>
+        {member.department && (
+          <p className="text-white/80 text-sm mb-2">
+            <span className="text-[#FFDD08]">Departamento: </span>
+            {member.department}
+          </p>
+        )}
+        <p className="text-white/80 text-sm line-clamp-3">{member.description}</p>
+      </div>
     </div>
   );
-};
-
-export default MemberCard;
+}

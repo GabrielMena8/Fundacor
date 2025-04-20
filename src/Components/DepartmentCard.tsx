@@ -1,41 +1,41 @@
 // src/Components/DepartmentCard.tsx
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
+import { urlFor } from '../lib/sanity';
+import type { Department } from '../Types/sanity';
 
-export type DepartmentItem = {
-  id: string;
-  name: string;
-  image?: string; // Opcional
-};
+interface DepartmentCardProps {
+  department: Department;
+}
 
-type DepartmentCardProps = {
-  department: DepartmentItem;
-};
-
-const DepartmentCard: React.FC<DepartmentCardProps> = ({ department }) => {
-  const navigate = useNavigate();
-
-  const handleClick = () => {
-    navigate(`/departamento/${department.id}`);
-  };
-
+export default function DepartmentCard({ department }: DepartmentCardProps) {
   return (
-    <div
-      onClick={handleClick}
-      className="cursor-pointer bg-gradient-to-l from-[#1f322e]/90 via-[#2A433E]/85 to-[#3B544A]/80 border-2 border-[#FFDD08] p-4 rounded-md shadow-lg text-center transition-opacity hover:opacity-95"
+    <Link
+      to={`/departamento/${department._id}`}
+      className="group bg-[#1F322E]/90 backdrop-blur-sm rounded-lg overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1"
     >
-      {department.image && (
+      <div className="relative h-48 overflow-hidden">
         <img
-          src={department.image}
+          src={urlFor(department.image).width(400).height(400).url()}
           alt={department.name}
-          className="w-full h-auto object-cover rounded mb-2 shadow-md border border-[#FFDD08]"
+          className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-700"
         />
-      )}
-      <h3 className="font-renogare font-bold text-xl mb-1 text-[#FFDD08]">
-        {department.name}
-      </h3>
-    </div>
+        <div className="absolute inset-0 bg-gradient-to-t from-[#0F1A19]/80 to-transparent"></div>
+        <div className="absolute bottom-0 left-0 right-0 p-4 text-white">
+          <h3 className="text-lg font-semibold mb-1 group-hover:text-[#FFDD08] transition-colors">
+            {department.name}
+          </h3>
+          <p className="text-white/80 text-sm line-clamp-2">{department.description}</p>
+        </div>
+      </div>
+      <div className="p-4 flex justify-between items-center">
+        <div className="text-[#FFDD08] text-sm">
+          {department.members.length} members
+        </div>
+        <span className="text-white group-hover:text-[#FFDD08] transition-colors">
+          View Details →
+        </span>
+      </div>
+    </Link>
   );
-};
-
-export default DepartmentCard;
+}

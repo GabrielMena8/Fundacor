@@ -1,197 +1,114 @@
 // src/Components/OrganigramaPanel.tsx
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { sharedStyles } from '../styles/sharedStyles';
+import { getMembers } from '../lib/sanity';
+import type { Member, Department } from '../Types/sanity';
 
 type OrganigramaPanelProps = {
   show: boolean;
-  mobile: boolean;
+  isMobile?: boolean;
 };
 
-export const OrganigramaPanel: React.FC<OrganigramaPanelProps> = ({ show, mobile }) => {
-  const departments = [
-    { id: 'gerencia', name: 'Gerencia' },
-    { id: 'administracion', name: 'Administración' },
-    { id: 'contabilidad', name: 'Contabilidad' },
-    { id: 'legal', name: 'Legal' },
-    { id: 'recursos-humanos', name: 'Recursos Humanos' },
-    { id: 'marketing', name: 'Marketing' },
-    { id: 'tecnologia', name: 'Tecnología' },
-    { id: 'operaciones', name: 'Operaciones' },
-  ];
+const DEPARTMENT_HIERARCHY: { [key: string]: Department[] } = {
+  'Dirección': ['Presidente', 'Director Ejecutivo', 'Asesor Externo', 'Secretario'],
+  'Áreas Principales': ['Operaciones', 'Tesorería', 'Seguridad'],
+  'Departamentos de Tesorería': ['Contraloría', 'Finanzas', 'Compras', 'R.R.H.H'],
+  'Departamentos de Operaciones': ['Planificación', 'Logística', 'Tecnología y Comunicación', 'Seguridad Operativa', 'Mantenimiento']
+};
 
-  const content = (
-    <div className="flex flex-col h-full">
-      {/* Header with long decorative lines on both sides - matching the image */}
-      <div className="flex items-center justify-center mb-8 transition-all duration-700 ease-out" 
-           style={{ 
-             opacity: show ? 1 : 0, 
-             transform: show ? 'translateY(0)' : 'translateY(1rem)',
-             transitionDelay: '150ms'
-           }}>
-        <div className="w-24 h-1.5 bg-[#FFDD08] rounded-full"></div>
-        <h2 className={`${sharedStyles.importantHeader} text-2xl font-bold text-center mx-4 text-[#FFDD08]`}>
-          ORGANIGRAMA
-        </h2>
-        <div className="w-24 h-1.5 bg-[#FFDD08] rounded-full"></div>
-      </div>
-      
-      <p className="text-center text-white/90 mb-8 font-medium transition-all duration-700 ease-out"
-         style={{ 
-           opacity: show ? 1 : 0, 
-           transform: show ? 'translateY(0)' : 'translateY(1rem)',
-           transitionDelay: '250ms'
-         }}>
-        Conoce a nuestros departamentos y el equipo que compone la Fundación Coromotana
-      </p>
-      
-      {/* Department grid - with improved styling */}
-      <div className="grid grid-cols-1 gap-4 pb-6">
-        {departments.map((dept, index) => (
-          <Link 
-            key={dept.id}
-            to={`/departamento/${dept.id}`}
-            className="bg-[#1F322E] border-l-4 border-[#FFDD08] p-4 rounded-lg shadow-md hover:shadow-lg transition-all duration-300 transform hover:translate-x-1 flex items-center justify-between group"
-            style={{ 
-              opacity: show ? 1 : 0,
-              transform: show ? 'translateX(0)' : 'translateX(-1rem)',
-              transition: 'all 0.5s ease-out',
-              transitionDelay: `${300 + (index * 75)}ms`
-            }}
-          >
-            <span className="text-[#FFDD08] font-medium text-lg max-w-[75%] break-words">
-              {dept.name}
-            </span>
-            <div className="ml-2 flex-shrink-0">
-              <svg 
-                className="w-5 h-5 text-[#FFDD08]" 
-                fill="none" 
-                stroke="currentColor" 
-                viewBox="0 0 24 24" 
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7"></path>
-              </svg>
-            </div>
-          </Link>
-        ))}
-      </div>
-      
-      {/* Footer section with lines */}
-      <div className="mt-auto pt-4 flex items-center justify-center transition-all duration-700 ease-out"
-           style={{ 
-             opacity: show ? 1 : 0, 
-             transform: show ? 'translateY(0)' : 'translateY(1rem)',
-             transitionDelay: '800ms'
-           }}>
-        <div className={`w-12 h-0.5 ${sharedStyles.accentDivider}`}></div>
-        <div className={`w-24 h-0.5 ${sharedStyles.divider} mx-2`}></div>
-        <div className={`w-12 h-0.5 ${sharedStyles.accentDivider}`}></div>
-      </div>
-    </div>
-  );
+export const OrganigramaPanel: React.FC<OrganigramaPanelProps> = ({ show }) => {
+  const [members, setMembers] = useState<Member[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchMembers = async () => {
+      try {
+        const membersData = await getMembers();
+        setMembers(membersData);
+        setError(null);
+      } catch (err) {
+        console.error('Error fetching members:', err);
+        setError('Failed to load members');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchMembers();
+  }, []);
+
+  const getMemberCount = (department: Department) => {
+    return members.filter(member => member.department === department).length;
+  };
 
   return (
-    <>
-      {mobile ? (
-        // Mobile view
-        <div 
-          className={`fixed bottom-0 left-0 right-0 z-40 
-            transform transition-all duration-700 ease-in-out 
-            ${show ? 'translate-y-0 opacity-100' : 'translate-y-full opacity-0 pointer-events-none'}
-            max-h-[70vh] overflow-y-auto
-            bg-gradient-to-b from-white via-white to-white
-            shadow-lg shadow-black/20 rounded-t-2xl`}
-          style={{
-            willChange: 'transform, opacity'
-          }}
-        >
-          {/* Pull indicator */}
-          <div className="flex justify-center py-2">
-            <div className="w-12 h-1.5 bg-gray-300/70 rounded-full"></div>
-          </div>
-          
-          <div className="px-6 pt-2 pb-8">
-            <div className="flex justify-between items-center mb-5 transition-all duration-500 ease-out"
-                 style={{ 
-                   opacity: show ? 1 : 0, 
-                   transform: show ? 'translateY(0)' : 'translateY(1rem)',
-                   transitionDelay: '150ms'
-                 }}>
-              <h2 className={`${sharedStyles.sectionTitle} text-2xl`}>
-                Organigrama
+    <div 
+      className="fixed md:left-0 inset-x-0 md:inset-x-auto top-0 bottom-0 w-full md:w-[400px] bg-[#1F322E]/90 backdrop-blur-lg shadow-2xl z-50 overflow-hidden"
+      style={{
+        opacity: show ? 1 : 0,
+        transform: show ? 'translateX(0)' : 'translateX(-100%)',
+        transition: 'all 0.5s cubic-bezier(0.4, 0, 0.2, 1)',
+        visibility: show ? 'visible' : 'hidden'
+      }}
+    >
+      <div className="h-full overflow-y-auto">
+        <div className="p-4 md:p-6">
+          <div className="text-center mb-6">
+            <div className="flex items-center justify-center gap-3 mb-4">
+              <div className="w-8 h-[2px] bg-[#FFDD08]"></div>
+              <h2 className="text-[#FFDD08] text-xl md:text-2xl font-bold tracking-wider">
+                ORGANIGRAMA
               </h2>
-              <div className="h-1.5 w-16 bg-gradient-to-r from-[#FFDD08] to-[#FAAE2B] rounded-full"></div>
+              <div className="w-8 h-[2px] bg-[#FFDD08]"></div>
             </div>
-            
-            <p className="text-[#1F322E] text-base font-medium mb-6 transition-all duration-500 ease-out"
-               style={{ 
-                 opacity: show ? 1 : 0, 
-                 transform: show ? 'translateY(0)' : 'translateY(0.5rem)',
-                 transitionDelay: '200ms'
-               }}>
-              Conoce a nuestros departamentos y el equipo que compone la Fundación
+            <p className="text-white/90 text-sm mb-6">
+              Conoce nuestro equipo y la estructura organizacional
             </p>
-            
-            <div className="grid grid-cols-2 gap-4 pb-6">
-              {departments.map((dept, index) => (
-                <Link 
-                  key={dept.id}
-                  to={`/departamento/${dept.id}`}
-                  className="bg-gradient-to-br from-[#1F322E] to-[#3B544A] backdrop-blur-sm border-l-4 border-[#FFDD08] p-4 rounded-lg shadow-md hover:shadow-lg transition-all duration-300 active:scale-[0.98] flex flex-col"
-                  style={{ 
-                    opacity: show ? 1 : 0,
-                    transform: show ? 'translateY(0)' : 'translateY(1rem)',
-                    transition: 'all 0.5s ease-out',
-                    transitionDelay: `${250 + (index * 50)}ms`
-                  }}
-                >
-                  <span className="text-white text-sm font-bold mb-2 leading-tight">{dept.name}</span>
-                  <div className="flex justify-end">
-                    <span className="text-xs text-[#FFDD08] flex items-center font-medium">
-                      Ver equipo
-                      <svg className="w-3.5 h-3.5 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7"></path>
-                      </svg>
-                    </span>
+          </div>
+
+          {loading ? (
+            <div className="flex items-center justify-center min-h-[200px]">
+              <div className="w-12 h-12 border-4 border-[#FFDD08] border-t-transparent rounded-full animate-spin"></div>
+            </div>
+          ) : error ? (
+            <div className="text-center text-white/80 min-h-[200px] flex items-center justify-center">
+              <p>{error}</p>
+            </div>
+          ) : (
+            <div className="space-y-6">
+              {Object.entries(DEPARTMENT_HIERARCHY).map(([section, departments], sectionIndex) => (
+                <div key={section} className="space-y-3">
+                  <h3 className="text-[#FFDD08] text-sm font-medium uppercase tracking-wider mb-2">
+                    {section}
+                  </h3>
+                  <div className="space-y-2">
+                    {departments.map((department, index) => (
+                      <Link 
+                        key={department}
+                        to={`/departamento/${encodeURIComponent(department.toLowerCase())}`}
+                        className="bg-gradient-to-br from-[#1F322E] to-[#3B544A] backdrop-blur-sm border-l-4 border-[#FFDD08] p-3 rounded-lg shadow-md hover:shadow-lg transition-all duration-300 active:scale-[0.98] flex items-center justify-between"
+                        style={{ 
+                          opacity: show ? 1 : 0,
+                          transform: show ? 'translateX(0)' : 'translateX(-1rem)',
+                          transition: 'all 0.5s ease-out',
+                          transitionDelay: `${200 + (sectionIndex * 100) + (index * 50)}ms`
+                        }}
+                      >
+                        <span className="text-white text-sm md:text-base font-bold leading-tight">{department}</span>
+                        <span className="text-xs md:text-sm text-[#FFDD08] font-medium ml-3">
+                          {getMemberCount(department)} miembros
+                        </span>
+                      </Link>
+                    ))}
                   </div>
-                </Link>
+                </div>
               ))}
             </div>
-            
-            {/* Mobile footer lines */}
-            <div className="flex items-center justify-center mt-2 pb-4">
-              <div className="h-0.5 w-12 bg-gradient-to-r from-[#FFDD08]/60 to-[#FFDD08]/60 rounded-full"></div>
-              <div className="h-0.5 w-24 bg-gray-300/50 rounded-full mx-2"></div>
-              <div className="h-0.5 w-12 bg-gradient-to-r from-[#FFDD08]/60 to-[#FFDD08]/60 rounded-full"></div>
-            </div>
-          </div>
-          
-          {/* Gradient bottom fade */}
-          <div className="absolute bottom-0 left-0 right-0 h-12 bg-gradient-to-t from-white to-transparent pointer-events-none"></div>
+          )}
         </div>
-      ) : (
-        // Desktop view
-        <div
-          className={`
-            fixed top-0 left-0 h-full w-full sm:w-1/2 md:w-1/3 lg:w-1/4
-            bg-gradient-to-b from-[#1F322E]/95 via-[#263C37]/95 to-[#2A433E]/95 backdrop-blur-md
-            text-white p-8 overflow-y-auto
-            transform transition-all duration-700 ease-in-out
-            ${show ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-full pointer-events-none'}
-            shadow-lg shadow-[#0F1A19]/30
-            z-50
-          `}
-          style={{
-            willChange: 'transform, opacity'
-          }}
-        >
-          <div className="flex flex-col h-full rounded-r-xl p-4 max-w-md mx-auto">
-            {content}
-          </div>
-        </div>
-      )}
-    </>
+      </div>
+    </div>
   );
 };
 

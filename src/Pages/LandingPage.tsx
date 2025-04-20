@@ -1,7 +1,7 @@
 // src/Pages/LandingPage.tsx
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import { Canvas } from '@react-three/fiber';
-import { Environment } from '@react-three/drei';
+import { Environment, Preload } from '@react-three/drei';
 import { useSpring } from '@react-spring/three';
 import Model from '../Components/Model';
 import AnimatedCamera from '../Components/AnimatedCamera';
@@ -13,14 +13,39 @@ import { ModelRotationProps } from '../Types/modelTypes';
 import { sharedStyles } from '../styles/sharedStyles';
 
 // SVG logo path for background pattern
-const logoBackgroundUrl = "/LogoFUNDACOR.svg";
+const logoBackgroundUrl = new URL('/LogoFUNDACOR.svg', import.meta.url).href;
 
-const Loader: React.FC = () => {
+// Progressive loading states
+const LoadingStates = {
+  INITIAL: 'initial',
+  MODEL_LOADED: 'model_loaded',
+  COMPLETE: 'complete'
+} as const;
+
+type LoadingState = typeof LoadingStates[keyof typeof LoadingStates];
+
+const Loader: React.FC<{ loadingState: LoadingState }> = ({ loadingState }) => {
+  const getLoadingText = () => {
+    switch (loadingState) {
+      case LoadingStates.INITIAL:
+        return 'Iniciando...';
+      case LoadingStates.MODEL_LOADED:
+        return 'Cargando recursos...';
+      case LoadingStates.COMPLETE:
+        return 'Completado';
+      default:
+        return 'Cargando...';
+    }
+  };
+
   return (
     <div className="fixed inset-0 bg-gradient-to-l from-[#1f322e]/50 via-[#2A433E]/40 to-[#3B544A]/30 backdrop-blur-sm flex items-center justify-center z-50">
       <div className="flex flex-col items-center">
         <div className="w-16 h-16 border-4 border-[#FFDD08]/80 border-t-transparent rounded-full animate-spin mb-4"></div>
-        <div className={`${sharedStyles.titleText} text-xl opacity-80`}>Cargando...</div>
+        <div className={`${sharedStyles.titleText} text-xl opacity-80`}>{getLoadingText()}</div>
+        <div className="mt-2 text-sm text-white/60">
+          {loadingState === LoadingStates.MODEL_LOADED && 'Optimizando renderizado...'}
+        </div>
       </div>
     </div>
   );
@@ -50,7 +75,7 @@ const Tooltip: React.FC<{ show: boolean }> = ({ show }) => {
 
 const LandingPage: React.FC = () => {
   const isMobileOrTablet = useMediaQuery('(max-width: 768px)');
-  const [isLoading, setIsLoading] = useState(true);
+  const [loadingState, setLoadingState] = useState<LoadingState>(LoadingStates.INITIAL);
   const [showTooltip, setShowTooltip] = useState(true);
 
   // -------- POSICIONES DE CÁMARA --------
@@ -78,16 +103,26 @@ const LandingPage: React.FC = () => {
   const isAnyPanelOpen =
     showEventsPanel || showOrganigramaPanel || showMissionVisionPanel;
 
-  // Loading and tooltip coordination
+  // Loading state management
   useEffect(() => {
-    // Set a timeout to remove the loader on both mobile and desktop
-    const timer = setTimeout(() => {
-      setIsLoading(false);
+    // Initial loading state
+    const initialTimer = setTimeout(() => {
+      setLoadingState(LoadingStates.MODEL_LOADED);
+    }, 1000);
+
+    // Complete loading state
+    const completeTimer = setTimeout(() => {
+      setLoadingState(LoadingStates.COMPLETE);
       setShowTooltip(false);
     }, 2000);
     
-    return () => clearTimeout(timer);
+    return () => {
+      clearTimeout(initialTimer);
+      clearTimeout(completeTimer);
+    };
   }, []); // Run once on component mount
+
+  const isLoading = loadingState !== LoadingStates.COMPLETE;
 
   // -------- ANIMACIÓN DE ROTACIÓN DEL MODELO --------
   const [springs, api] = useSpring(() => ({
@@ -245,7 +280,7 @@ const LandingPage: React.FC = () => {
   // -------- RENDER --------
   return (
     <div className="w-screen h-screen bg-gradient-to-b from-[#f4e7e7] to-[#F5F5F5] relative font-caviardreams">
-      {isLoading && <Loader />}
+      {isLoading && <Loader loadingState={loadingState} />}
       
       {/* Copyright disclaimer */}
       <div className="absolute bottom-2 left-1/2 transform -translate-x-1/2 text-xs text-[#1F322E]/70 text-center z-10 w-full px-4">
@@ -268,24 +303,30 @@ const LandingPage: React.FC = () => {
               backgroundSize: '200px',
               backgroundPosition: '30px 30px',
               filter: 'blur(0.5px)',
-              pointerEvents: 'none'
+              pointerEvents: 'none',
+              willChange: 'background-image'
             }}
+            role="presentation"
+            aria-hidden="true"
           />
           
           <div className="w-full h-3/5 relative z-10 flex items-center justify-center">
             <Canvas className="w-full h-full" camera={{ position: initialCameraPos, fov: 40 }}>
-              <ambientLight intensity={0.5} />
-              <directionalLight position={[10, 10, 5]} intensity={1.5} />
-              <Environment preset="sunset" />
-              <Model
-                onLeftClick={handleLeftClick}
-                onRightClick={handleRightClick}
-                onTopClick={handleTopClick}
-                rotation={modelRotation}
-                scale={modelScale}
-                disableInteractivity={true}
-              />
-              <AnimatedCamera target={cameraTarget} /> {/* Restore original camera target */}
+              <Suspense fallback={null}>
+                <ambientLight intensity={0.5} />
+                <directionalLight position={[10, 10, 5]} intensity={1.5} />
+                <Environment preset="sunset" />
+                <Model
+                  onLeftClick={handleLeftClick}
+                  onRightClick={handleRightClick}
+                  onTopClick={handleTopClick}
+                  rotation={modelRotation}
+                  scale={modelScale}
+                  disableInteractivity={isLoading}
+                />
+                <AnimatedCamera target={cameraTarget} />
+                <Preload all />
+              </Suspense>
             </Canvas>
             
             {/* Mobile navigation guidance - show more prominent buttons instead */}
@@ -335,11 +376,10 @@ const LandingPage: React.FC = () => {
 
           {/* Render panels */}
           <div className="w-full flex flex-col">
-            <EventsPanel show={showEventsPanel} mobile={true} />
-            <OrganigramaPanel show={showOrganigramaPanel} mobile={true} />
-            <MissionVisionPanel show={showMissionVisionPanel} mobile={true} />
+            <EventsPanel show={showEventsPanel} isMobile={isMobileOrTablet} />
+            <OrganigramaPanel show={showOrganigramaPanel} isMobile={isMobileOrTablet} />
+            <MissionVisionPanel show={showMissionVisionPanel} isMobile={isMobileOrTablet} />
           </div>
-          
           {/* Show a close button when a panel is open */}
           {isAnyPanelOpen && (
             <button 
@@ -364,29 +404,35 @@ const LandingPage: React.FC = () => {
               backgroundSize: '200px',
               backgroundPosition: '30px 30px',
               filter: 'blur(0.5px)',
-              pointerEvents: 'none'
+              pointerEvents: 'none',
+              willChange: 'background-image'
             }}
+            role="presentation"
+            aria-hidden="true"
           />
           
           <Canvas className="absolute inset-0 z-10" camera={{ position: initialCameraPos, fov: 40 }}>
-            <ambientLight intensity={0.5} />
-            <directionalLight position={[10, 10, 5]} intensity={1.5} />
-            <Environment preset="sunset" />
-            <Model
-              onLeftClick={handleLeftClick}
-              onRightClick={handleRightClick}
-              onTopClick={handleTopClick}
-              rotation={modelRotation}
-              scale={modelScale}
-              disableInteractivity={isLoading}
-            />
-            <AnimatedCamera target={cameraTarget} />
+            <Suspense fallback={null}>
+              <ambientLight intensity={0.5} />
+              <directionalLight position={[10, 10, 5]} intensity={1.5} />
+              <Environment preset="sunset" />
+              <Model
+                onLeftClick={handleLeftClick}
+                onRightClick={handleRightClick}
+                onTopClick={handleTopClick}
+                rotation={modelRotation}
+                scale={modelScale}
+                disableInteractivity={isLoading}
+              />
+              <AnimatedCamera target={cameraTarget} />
+              <Preload all />
+            </Suspense>
           </Canvas>
 
           {/* Render panels */}
-          <EventsPanel show={showEventsPanel} mobile={false} />
-          <OrganigramaPanel show={showOrganigramaPanel} mobile={false} />
-          <MissionVisionPanel show={showMissionVisionPanel} mobile={false} />
+          <EventsPanel show={showEventsPanel} isMobile={isMobileOrTablet} />
+          <OrganigramaPanel show={showOrganigramaPanel} isMobile={isMobileOrTablet} />
+          <MissionVisionPanel show={showMissionVisionPanel} isMobile={isMobileOrTablet} />
         </div>
       )}
     </div>

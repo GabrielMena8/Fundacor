@@ -2,9 +2,23 @@
 <html lang="en" class="">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg" href="/LogoFUNDACOR.svg" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self' https: data: blob:; script-src 'self' 'unsafe-inline' 'unsafe-eval' https:; style-src 'self' 'unsafe-inline' https:; img-src 'self' https: data: blob:; font-src 'self' https: data:; connect-src 'self' https: wss:;">
+    <link rel="icon" type="image/svg+xml" href="/LogoFUNDACOR.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Fundación Coromotana - FUNDACOR</title>
+    <meta name="description" content="Fundación Coromotana - Organización sin fines de lucro dedicada al desarrollo social y cultural de la comunidad coromotana." />
+    <title>Fundación Coromotana</title>
+    <!-- Preload critical resources -->
+    <link rel="preload" href="/LogoFUNDACOR.gltf" as="fetch" crossorigin="anonymous">
+    <link 
+      rel="preload" 
+      href="/LogoFUNDACOR.svg" 
+      as="image" 
+      type="image/svg+xml"
+      fetchpriority="high"
+    />
+    <!-- Preload fonts if you're using any custom fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   </head>
   <body class=" " >
     <div id="root"></div>

@@ -1,17 +1,17 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import LandingPage from './Pages/LandingPage';
 import DepartmentDetail from './Pages/DepartmentDetail';
-import EventDetail from './Pages/EventDetail'; // <- Importas tu nueva página
-import EventsPage from './Pages/EventsPage'; // Import the EventsPage component
+import EventDetail from './Pages/EventDetail';
+import EventsPage from './Pages/EventsPage';
 
 function App() {
   return (
     <Router>
       <Routes>
         <Route path="/" element={<LandingPage />} />
-        <Route path="/departamento/:departmentId" element={<DepartmentDetail />} />
-        <Route path="/evento/:eventId" element={<EventDetail />} /> {/* <- Aquí */}
-        <Route path="/eventos" element={<EventsPage />} /> {/* New route for events listing */}
+        <Route path="/departamento/:departmentName" element={<DepartmentDetail />} />
+        <Route path="/evento/:eventId" element={<EventDetail />} />
+        <Route path="/eventos" element={<EventsPage />} />
       </Routes>
     </Router>
   );

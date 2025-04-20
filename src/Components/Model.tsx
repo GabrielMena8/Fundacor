@@ -1,13 +1,16 @@
 // src/Components/Model.tsx
-import React, { useEffect, useRef } from 'react';
-import { useGLTF } from '@react-three/drei';
+import React, { useEffect, useRef, Suspense } from 'react';
+import { useGLTF, useTexture, Loader, useBVH } from '@react-three/drei';
 import { a } from '@react-spring/three';
 import * as THREE from 'three';
-import { MeshStandardMaterial, Box3, Vector3 } from 'three';
+import { MeshStandardMaterial, Box3, Vector3, Object3D } from 'three';
 import { ModelProps, GLTFResult } from '../Types/modelTypes';
 import { ThreeEvent } from '@react-three/fiber';
 
-const Model: React.FC<ModelProps> = ({
+// Preload the model
+useGLTF.preload('/LogoFUNDACOR.gltf');
+
+const ModelContent: React.FC<ModelProps> = ({
   onTopClick,
   onLeftClick,
   onRightClick,
@@ -15,24 +18,41 @@ const Model: React.FC<ModelProps> = ({
   scale = 1,
   disableInteractivity = false,
 }) => {
-  const { nodes, scene } = useGLTF('/LogoFUNDACOR.gltf') as unknown as GLTFResult;
+  const { nodes, scene } = useGLTF('/LogoFUNDACOR.gltf', true) as unknown as GLTFResult; // Enable draco
   const groupRef = useRef<THREE.Group>(null);
   const gemRef = useRef<THREE.Mesh>(null);
 
-  // Clonamos el material de la gema para evitar compartir referencias y modificarla accidentalmente.
+  // Apply BVH for optimized raycasting
+  useBVH(scene);
+
+  // Cache materials and geometries
   useEffect(() => {
     if (nodes.Curve003?.material) {
-      nodes.Curve003.material = (nodes.Curve003.material as MeshStandardMaterial).clone();
+      const material = (nodes.Curve003.material as MeshStandardMaterial).clone();
+      material.roughness = 0.5; // Optimize material properties
+      material.metalness = 0.8;
+      nodes.Curve003.material = material;
     }
+
+    // Optimize geometries
+    Object.values(nodes).forEach((node: Object3D) => {
+      if ('geometry' in node && node.geometry) {
+        node.geometry.computeBoundingBox();
+        node.geometry.computeBoundingSphere();
+      }
+    });
   }, [nodes]);
 
-  // Centramos el modelo a partir de su caja delimitadora.
+  // Center model optimization
   useEffect(() => {
     if (groupRef.current) {
       const box = new Box3().setFromObject(groupRef.current);
       const center = new Vector3();
       box.getCenter(center);
       groupRef.current.position.sub(center);
+
+      // Cache world matrix
+      groupRef.current.updateMatrixWorld(true);
     }
   }, [scene]);
 
@@ -48,7 +68,6 @@ const Model: React.FC<ModelProps> = ({
     if (!intersection) return;
 
     const localPoint = gemRef.current.worldToLocal(intersection.point.clone());
-    console.log('Local point:', localPoint);
 
     const targetTop = { x: -0.1294, y: 0.44, z: -1.9852 };
     const tolerance = 0.1;
@@ -73,6 +92,7 @@ const Model: React.FC<ModelProps> = ({
       rotation-x={rotation.rotationX}
       rotation-y={rotation.rotationY}
       rotation-z={rotation.rotationZ}
+      dispose={null} // Prevent disposing cached resources
     >
       <primitive object={nodes.Curve002} />
       <primitive object={nodes.Curve004} />
@@ -80,9 +100,18 @@ const Model: React.FC<ModelProps> = ({
         object={nodes.Curve003}
         ref={gemRef}
         onClick={handleGemClick}
-        className="gem-interactive"  // Se aplica la clase para efecto hover
+        className="gem-interactive"
       />
     </a.group>
+  );
+};
+
+// Wrap the model in Suspense for better loading management
+const Model: React.FC<ModelProps> = (props) => {
+  return (
+    <Suspense fallback={null}>
+      <ModelContent {...props} />
+    </Suspense>
   );
 };
 
