@@ -1,8 +1,9 @@
-import   { useEffect, useState } from 'react';  
+import { useEffect, useState } from 'react';  
 import { getEvents, urlFor } from '../lib/sanity';
 import type { Event } from '../Types/sanity';
 import EventCard from '../Components/EventCard';
 import { sharedStyles } from '../styles/sharedStyles';
+import { BackButton } from '../Components/ui/Button';
 
 export default function EventsPage() {
   const [events, setEvents] = useState<Event[]>([]);
@@ -59,6 +60,10 @@ export default function EventsPage() {
   return (
     <div className={`min-h-screen ${sharedStyles.pageBg}`}>
       <div className={`${sharedStyles.container} relative z-10 p-6`}>
+        <div className="mb-8">
+          <BackButton />
+        </div>
+
         <div className="text-center mb-12">
           <div className="relative">
             <div className="absolute inset-0 flex items-center justify-center blur-sm opacity-20">

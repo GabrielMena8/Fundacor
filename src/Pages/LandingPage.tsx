@@ -115,10 +115,18 @@ const LandingPage: React.FC = () => {
       setLoadingState(LoadingStates.COMPLETE);
       setShowTooltip(false);
     }, 2000);
+
+    // Add event listener for closing events panel
+    const handleCloseEventsPanel = () => {
+      setShowEventsPanel(false);
+    };
+    
+    window.addEventListener('closeEventsPanel', handleCloseEventsPanel);
     
     return () => {
       clearTimeout(initialTimer);
       clearTimeout(completeTimer);
+      window.removeEventListener('closeEventsPanel', handleCloseEventsPanel);
     };
   }, []); // Run once on component mount
 

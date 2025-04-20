@@ -1,17 +1,17 @@
 // src/Pages/DepartmentDetail.tsx
 import React, { useEffect, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import { sharedStyles } from '../styles/sharedStyles';
 import { getMembers } from '../lib/sanity';
 import type { Member } from '../Types/sanity';
 import MemberCard from '../Components/MemberCard';
+import { BackButton } from '../Components/ui/Button';
 
 const DepartmentDetail: React.FC = () => {
   const { departmentName } = useParams<{ departmentName: string }>();
   const [members, setMembers] = useState<Member[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchMembers = async () => {
@@ -47,10 +47,6 @@ const DepartmentDetail: React.FC = () => {
     fetchMembers();
   }, [departmentName]);
 
-  const goBack = () => {
-    navigate('/');
-  };
-
   if (loading) {
     return (
       <div className={`min-h-screen ${sharedStyles.pageBg} p-6 flex items-center justify-center`}>
@@ -70,26 +66,7 @@ const DepartmentDetail: React.FC = () => {
             Error al cargar los miembros
           </h1>
           <p className="text-white/80 mb-6">{error}</p>
-          <button 
-            onClick={goBack}
-            className={`inline-flex items-center ${sharedStyles.button} px-6 py-3 rounded-lg active:scale-95 transition-transform`}
-          >
-            <svg 
-              className="w-5 h-5 mr-2 transform group-hover:-translate-x-1 transition-transform duration-300" 
-              fill="none" 
-              stroke="currentColor" 
-              viewBox="0 0 24 24" 
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <path 
-                strokeLinecap="round" 
-                strokeLinejoin="round" 
-                strokeWidth={2} 
-                d="M10 19l-7-7m0 0l7-7m-7 7h18" 
-              />
-            </svg>
-            <span className="font-medium">Volver al Inicio</span>
-          </button>
+          <BackButton />
         </div>
       </div>
     );
@@ -102,50 +79,14 @@ const DepartmentDetail: React.FC = () => {
     <div className={`min-h-screen ${sharedStyles.pageBg}`}>
       {/* Fixed back button on mobile */}
       <div className="sticky top-0 left-0 right-0 z-[100] bg-[#1F322E]/80 backdrop-blur-md shadow-lg px-4 py-2 sm:hidden">
-        <button 
-          onClick={goBack}
-          className="flex items-center justify-center bg-[#FFDD08] text-[#1F322E] px-4 py-2 rounded-lg w-full active:scale-95 transition-transform"
-        >
-          <svg 
-            className="w-5 h-5 mr-2" 
-            fill="none" 
-            stroke="currentColor" 
-            viewBox="0 0 24 24" 
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            <path 
-              strokeLinecap="round" 
-              strokeLinejoin="round" 
-              strokeWidth={2} 
-              d="M10 19l-7-7m0 0l7-7m-7 7h18" 
-            />
-          </svg>
-          <span className="font-medium">Volver al Inicio</span>
-        </button>
+        <BackButton />
       </div>
       
       <div className={`${sharedStyles.container} relative z-10 p-6`}>
         {/* Desktop back button (hidden on mobile) */}
-        <button 
-          onClick={goBack}
-          className={`hidden sm:inline-flex items-center ${sharedStyles.button} px-4 py-2 rounded-lg mb-8 active:scale-95 transition-transform`}
-        >
-          <svg 
-            className="w-5 h-5 mr-2 transform group-hover:-translate-x-1 transition-transform duration-300" 
-            fill="none" 
-            stroke="currentColor" 
-            viewBox="0 0 24 24" 
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            <path 
-              strokeLinecap="round" 
-              strokeLinejoin="round" 
-              strokeWidth={2} 
-              d="M10 19l-7-7m0 0l7-7m-7 7h18" 
-            />
-          </svg>
-          <span className="font-medium">Volver al Inicio</span>
-        </button>
+        <div className="hidden sm:block mb-8">
+          <BackButton variant="subtle" />
+        </div>
         
         <div className="text-center mb-12">
           <div className="relative">

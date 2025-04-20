@@ -1,9 +1,10 @@
 // src/Components/EventsPanel.tsx
 import React, { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
 import { getEvents, urlFor } from '../lib/sanity';
 import type { Event } from '../Types/sanity';
 import EventCard from './EventCard';
+import { LinkButton } from './ui/Button';
+import { Icon } from './ui/Icon';
 
 type EventsPanelProps = {
   show: boolean;
@@ -32,10 +33,9 @@ export const EventsPanel: React.FC<EventsPanelProps> = ({ show }) => {
     fetchEvents();
   }, []);
 
-  const handleViewAllClick = (e: React.MouseEvent) => {
-    if (show) {
-      e.preventDefault();
-    }
+  const handleViewAllClick = () => {
+    // Allow navigation to happen
+    // No need to prevent default or close panel
   };
 
   return (
@@ -111,21 +111,18 @@ export const EventsPanel: React.FC<EventsPanelProps> = ({ show }) => {
                   transitionDelay: '800ms'
                 }}
               >
-                <Link 
+                <LinkButton 
                   to="/eventos" 
                   onClick={handleViewAllClick}
-                  className="flex items-center justify-center px-6 py-3 bg-[#1F322E] hover:bg-[#2A433E] border-2 border-[#FFDD08]/60 hover:border-[#FFDD08] rounded-lg text-white text-sm transition-all duration-300 hover:shadow-lg group"
+                  variant="secondary"
+                  className="group"
                 >
                   <span className="font-medium">Ver todos los eventos</span>
-                  <svg 
-                    className="w-5 h-5 ml-2 transform group-hover:translate-x-1 transition-transform duration-300" 
-                    fill="none" 
-                    stroke="currentColor" 
-                    viewBox="0 0 24 24"
-                  >
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3"></path>
-                  </svg>
-                </Link>
+                  <Icon 
+                    name="arrow-right"
+                    className="w-5 h-5 ml-2 transform group-hover:translate-x-1 transition-transform duration-300"
+                  />
+                </LinkButton>
               </div>
             </div>
           )}
