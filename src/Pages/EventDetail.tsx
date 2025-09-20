@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { sharedStyles } from '../styles/sharedStyles';
-import { getEvent, urlFor } from '../lib/sanity';
+import { getEvent, imageUrl } from '../lib/sanity';
 import type { Event } from '../Types/sanity';
 
 const EventDetail: React.FC = () => {
@@ -196,7 +196,7 @@ const EventDetail: React.FC = () => {
             <div className="relative rounded-xl overflow-hidden shadow-2xl">
               <div className="absolute inset-0 bg-gradient-to-t from-[#0F1A19]/80 to-transparent"></div>
               <img
-                src={event.image ? urlFor(event.image).toString() : ''}
+                src={event.image ? imageUrl(event.image) : ''}
                 alt={event.title}
                 className="w-full h-full object-cover"
               />

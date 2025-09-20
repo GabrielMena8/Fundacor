@@ -24,6 +24,19 @@
   --font-renogare: 'Renogare', sans-serif;
 }
 
+/* Apply font families to body and headings */
+body {
+  font-family: var(--font-renogare);
+}
+
+.font-caviardreams {
+  font-family: var(--font-caviar);
+}
+
+.font-renogare {
+  font-family: var(--font-renogare);
+}
+
 /* Clases para ocultar la scrollbar en contenedores */
 .scrollbar-hide {
   -ms-overflow-style: none;  /* IE and Edge */

@@ -11,7 +11,6 @@ Currently, two official plugins are available:
 
 If you are developing a production application, we recommend updating the configuration to enable type aware lint rules:
 
-- Configure the top-level `parserOptions` property like this:
 
 ```js
 export default tseslint.config({
@@ -24,6 +23,26 @@ export default tseslint.config({
   },
 })
 ```
+
+## Sanity Studio
+
+This repo now includes a minimal Sanity Studio scaffold in the `studio/` folder.
+
+Quick start:
+
+```powershell
+cd studio
+npm install
+npm run dev
+```
+
+To deploy to the Sanity-hosted studio (project `ut4uykcs`):
+
+```powershell
+cd studio
+npm run deploy
+```
+
 
 - Replace `tseslint.configs.recommended` to `tseslint.configs.recommendedTypeChecked` or `tseslint.configs.strictTypeChecked`
 - Optionally add `...tseslint.configs.stylisticTypeChecked`

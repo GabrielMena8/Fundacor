@@ -37,13 +37,12 @@ const MissionVisionPanel: React.FC<MissionVisionPanelProps> = ({ show, isMobile 
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
               </svg>
             </div>
-            <h3 className="text-[#FFDD08] text-xl md:text-2xl font-bold group-hover:text-[#FFDD08] transition-colors duration-300">
-              Nuestra Misión
-            </h3>
+              <h3 className="text-[#FFDD08] text-xl md:text-2xl font-bold group-hover:text-[#FFDD08] transition-colors duration-300">
+                Nuestra Misión
+              </h3>
           </div>
           <p className="text-white/90 text-base md:text-lg leading-relaxed group-hover:text-white transition-colors duration-300">
-            Nuestra misión es servir a la comunidad con integridad y compromiso, 
-            mejorando la calidad de vida mediante iniciativas innovadoras.
+            Promover y ejecutar programas de apoyo social, educación y asistencia técnica que mejoren la calidad de vida de las comunidades, fomentando la participación ciudadana y el desarrollo sostenible.
           </p>
         </div>
         
@@ -55,13 +54,12 @@ const MissionVisionPanel: React.FC<MissionVisionPanelProps> = ({ show, isMobile 
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
               </svg>
             </div>
-            <h3 className="text-[#FFDD08] text-xl md:text-2xl font-bold group-hover:text-[#FFDD08] transition-colors duration-300">
-              Nuestra Visión
-            </h3>
+              <h3 className="text-[#FFDD08] text-xl md:text-2xl font-bold group-hover:text-[#FFDD08] transition-colors duration-300">
+                Nuestra Visión
+              </h3>
           </div>
           <p className="text-white/90 text-base md:text-lg leading-relaxed group-hover:text-white transition-colors duration-300">
-            Nuestra visión es ser un referente en el desarrollo comunitario, 
-            impulsando el progreso y bienestar para todos.
+            Ser una organización líder en iniciativas comunitarias que impulsan el bienestar, la inclusión y la resiliencia local, estableciendo alianzas estratégicas que multipliquen nuestro impacto.
           </p>
         </div>
       </div>

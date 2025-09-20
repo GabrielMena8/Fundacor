@@ -35,6 +35,15 @@ export default defineConfig({
       methods: ['GET', 'HEAD', 'PUT', 'POST', 'DELETE', 'PATCH'],
       credentials: true
     },
+    // Proxy Sanity requests in development to avoid CORS issues
+    proxy: {
+      '/sanity': {
+        target: 'https://ut4uykcs.apicdn.sanity.io',
+        changeOrigin: true,
+        secure: true,
+        rewrite: (path) => path.replace(/^\/sanity/, ''),
+      }
+    },
     port: 5173,
     host: true
   },

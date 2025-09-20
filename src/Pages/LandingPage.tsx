@@ -1,5 +1,6 @@
 // src/Pages/LandingPage.tsx
 import React, { useState, useEffect, Suspense } from 'react';
+import { getEvents, getMembers, getDepartments } from '../lib/sanity';
 import { Canvas } from '@react-three/fiber';
 import { Environment, Preload } from '@react-three/drei';
 import { useSpring } from '@react-spring/three';
@@ -122,6 +123,18 @@ const LandingPage: React.FC = () => {
     };
     
     window.addEventListener('closeEventsPanel', handleCloseEventsPanel);
+    // Background prefetch: data + next route chunk
+    // Fire and forget; errors are non-fatal
+    getEvents().catch(() => undefined);
+    getMembers().catch(() => undefined);
+    getDepartments().catch(() => undefined);
+    // Warm React.lazy chunks when idle
+    const w = window as Window & { requestIdleCallback?: (cb: () => void) => void };
+    if (typeof w.requestIdleCallback === 'function') {
+      w.requestIdleCallback(() => { void import('./EventsPage'); });
+    } else {
+      setTimeout(() => import('./EventsPage'), 1500);
+    }
     
     return () => {
       clearTimeout(initialTimer);

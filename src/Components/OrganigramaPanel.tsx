@@ -1,25 +1,22 @@
 // src/Components/OrganigramaPanel.tsx
 import React, { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import MemberCard from './MemberCard';
 import { getMembers } from '../lib/sanity';
-import type { Member, Department } from '../Types/sanity';
+import type { Member } from '../Types/sanity';
+import { Button } from './ui/Button';
 
 type OrganigramaPanelProps = {
   show: boolean;
   isMobile?: boolean;
 };
 
-const DEPARTMENT_HIERARCHY: { [key: string]: Department[] } = {
-  'Dirección': ['Presidente', 'Director Ejecutivo', 'Asesor Externo', 'Secretario'],
-  'Áreas Principales': ['Operaciones', 'Tesorería', 'Seguridad'],
-  'Departamentos de Tesorería': ['Contraloría', 'Finanzas', 'Compras', 'R.R.H.H'],
-  'Departamentos de Operaciones': ['Planificación', 'Logística', 'Tecnología y Comunicación', 'Seguridad Operativa', 'Mantenimiento']
-};
+// We'll group members dynamically by their `department` string
 
 export const OrganigramaPanel: React.FC<OrganigramaPanelProps> = ({ show }) => {
   const [members, setMembers] = useState<Member[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [expanded, setExpanded] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     const fetchMembers = async () => {
@@ -38,13 +35,11 @@ export const OrganigramaPanel: React.FC<OrganigramaPanelProps> = ({ show }) => {
     fetchMembers();
   }, []);
 
-  const getMemberCount = (department: Department) => {
-    return members.filter(member => member.department === department).length;
-  };
+  // dynamic grouping replaces fixed hierarchy
 
   return (
     <div 
-      className="fixed md:left-0 inset-x-0 md:inset-x-auto top-0 bottom-0 w-full md:w-[400px] bg-[#1F322E]/90 backdrop-blur-lg shadow-2xl z-50 overflow-hidden"
+  className="fixed md:left-0 inset-x-0 md:inset-x-auto top-0 bottom-0 w-full md:w-[520px] bg-[#1F322E]/90 backdrop-blur-lg shadow-2xl z-50 overflow-hidden"
       style={{
         opacity: show ? 1 : 0,
         transform: show ? 'translateX(0)' : 'translateX(-100%)',
@@ -52,7 +47,7 @@ export const OrganigramaPanel: React.FC<OrganigramaPanelProps> = ({ show }) => {
         visibility: show ? 'visible' : 'hidden'
       }}
     >
-      <div className="h-full overflow-y-auto">
+      <div className="h-full overflow-y-auto pr-2">
         <div className="p-4 md:p-6">
           <div className="text-center mb-6">
             <div className="flex items-center justify-center gap-3 mb-4">
@@ -76,34 +71,59 @@ export const OrganigramaPanel: React.FC<OrganigramaPanelProps> = ({ show }) => {
               <p>{error}</p>
             </div>
           ) : (
-            <div className="space-y-6">
-              {Object.entries(DEPARTMENT_HIERARCHY).map(([section, departments], sectionIndex) => (
-                <div key={section} className="space-y-3">
-                  <h3 className="text-[#FFDD08] text-sm font-medium uppercase tracking-wider mb-2">
-                    {section}
-                  </h3>
-                  <div className="space-y-2">
-                    {departments.map((department, index) => (
-                      <Link 
-                        key={department}
-                        to={`/departamento/${encodeURIComponent(department.toLowerCase())}`}
-                        className="bg-gradient-to-br from-[#1F322E] to-[#3B544A] backdrop-blur-sm border-l-4 border-[#FFDD08] p-3 rounded-lg shadow-md hover:shadow-lg transition-all duration-300 active:scale-[0.98] flex items-center justify-between"
-                        style={{ 
-                          opacity: show ? 1 : 0,
-                          transform: show ? 'translateX(0)' : 'translateX(-1rem)',
-                          transition: 'all 0.5s ease-out',
-                          transitionDelay: `${200 + (sectionIndex * 100) + (index * 50)}ms`
-                        }}
-                      >
-                        <span className="text-white text-sm md:text-base font-bold leading-tight">{department}</span>
-                        <span className="text-xs md:text-sm text-[#FFDD08] font-medium ml-3">
-                          {getMemberCount(department)} miembros
-                        </span>
-                      </Link>
-                    ))}
+            <div className="space-y-8">
+              {members.length === 0 && (
+                <div className="text-center text-white/80 min-h-[200px] flex items-center justify-center">
+                  <div>
+                    <p className="mb-2">Aún no hay miembros registrados.</p>
+                    <p className="text-sm text-white/70">Agrega miembros desde el Studio o revisa la conexión.</p>
                   </div>
                 </div>
-              ))}
+              )}
+              {Object
+                .entries(
+                  members.reduce((acc: Record<string, Member[]>, m) => {
+                    const dept = m.department || 'Sin departamento';
+                    if (!acc[dept]) acc[dept] = [];
+                    acc[dept].push(m);
+                    return acc;
+                  }, {})
+                )
+                .sort(([a], [b]) => a.localeCompare(b))
+                .map(([department, list]) => {
+                  const sorted = (list as Member[]).slice().sort((a, b) => a.name.localeCompare(b.name));
+                  const isExpanded = !!expanded[department];
+                  const visible = isExpanded ? sorted : sorted.slice(0, 3);
+                  return (
+                    <div key={department} className="space-y-3">
+                      <div className="flex items-center gap-2">
+                        <h3 className="text-[#FFDD08] text-sm font-medium uppercase tracking-wider">
+                          {department}
+                        </h3>
+                        <span className="text-[11px] px-2 py-0.5 rounded-full bg-[#FFDD08]/10 text-[#FFDD08]">
+                          {sorted.length}
+                        </span>
+                      </div>
+                      <div className="grid grid-cols-1 gap-5">
+                        {visible.map((member) => (
+                          <MemberCard key={member._id} member={member} />
+                        ))}
+                      </div>
+                      {sorted.length > 3 && (
+                        <div className="pt-1">
+                          <Button
+                            variant="secondary"
+                            size="sm"
+                            className="w-full border-[#FFDD08]/40 text-[#FFDD08] hover:text-[#FFDD08]"
+                            onClick={() => setExpanded((e) => ({ ...e, [department]: !isExpanded }))}
+                          >
+                            {isExpanded ? 'Mostrar menos' : `Mostrar todos (${sorted.length})`}
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
             </div>
           )}
         </div>

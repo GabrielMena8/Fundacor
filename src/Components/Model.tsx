@@ -1,11 +1,11 @@
 // src/Components/Model.tsx
-import React, { useEffect, useRef, Suspense } from 'react';
+import React, { useEffect, useRef, Suspense, useState } from 'react';
 import { useGLTF, useTexture, Loader, useBVH } from '@react-three/drei';
 import { a } from '@react-spring/three';
 import * as THREE from 'three';
 import { MeshStandardMaterial, Box3, Vector3, Object3D } from 'three';
 import { ModelProps, GLTFResult } from '../Types/modelTypes';
-import { ThreeEvent } from '@react-three/fiber';
+import { ThreeEvent, useFrame } from '@react-three/fiber';
 
 // Preload the model
 useGLTF.preload('/LogoFUNDACOR.gltf');
@@ -21,6 +21,8 @@ const ModelContent: React.FC<ModelProps> = ({
   const { nodes, scene } = useGLTF('/LogoFUNDACOR.gltf', true) as unknown as GLTFResult; // Enable draco
   const groupRef = useRef<THREE.Group>(null);
   const gemRef = useRef<THREE.Mesh>(null);
+  const gemMaterialRef = useRef<MeshStandardMaterial | null>(null);
+  const [hovered, setHovered] = useState(false);
 
   // Apply BVH for optimized raycasting
   useBVH(scene);
@@ -31,7 +33,12 @@ const ModelContent: React.FC<ModelProps> = ({
       const material = (nodes.Curve003.material as MeshStandardMaterial).clone();
       material.roughness = 0.5; // Optimize material properties
       material.metalness = 0.8;
+  // Give the gem an emissive base so it can "shine" when pulsing
+  // Use brand yellow to match UI accents
+  material.emissive = new THREE.Color(0xFFDD08);
+      material.emissiveIntensity = 0.0;
       nodes.Curve003.material = material;
+      gemMaterialRef.current = material;
     }
 
     // Optimize geometries
@@ -42,6 +49,22 @@ const ModelContent: React.FC<ModelProps> = ({
       }
     });
   }, [nodes]);
+
+  // Pulse/shine animation on the gem material
+  useFrame(({ clock }) => {
+    if (!gemMaterialRef.current || disableInteractivity) return;
+    const t = clock.getElapsedTime();
+  const freq = 0.8; // pulses per second (slower)
+    const pulse = (Math.sin(t * Math.PI * freq) + 1) / 2; // 0..1
+    const base = 0.05;
+    const amp = hovered ? 0.8 : 0.4; // stronger when hovered
+    gemMaterialRef.current.emissiveIntensity = base + pulse * amp;
+    // optional tiny scale pulse to enhance affordance
+    if (gemRef.current) {
+      const s = 1 + pulse * 0.03 * (hovered ? 1.4 : 1.0);
+      gemRef.current.scale.set(s, s, s);
+    }
+  });
 
   // Center model optimization
   useEffect(() => {
@@ -85,6 +108,20 @@ const ModelContent: React.FC<ModelProps> = ({
     }
   };
 
+  // keyboard activation when pointer is over the gem
+  useEffect(() => {
+    if (disableInteractivity) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (!hovered) return;
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        onTopClick?.();
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [hovered, disableInteractivity, onTopClick]);
+
   return (
     <a.group
       ref={groupRef}
@@ -100,7 +137,23 @@ const ModelContent: React.FC<ModelProps> = ({
         object={nodes.Curve003}
         ref={gemRef}
         onClick={handleGemClick}
+        onPointerEnter={() => {
+          if (!disableInteractivity) {
+            setHovered(true);
+            if (typeof document !== 'undefined' && document.body) {
+              document.body.style.cursor = 'pointer';
+            }
+          }
+        }}
+        onPointerLeave={() => {
+          setHovered(false);
+          if (typeof document !== 'undefined' && document.body) {
+            document.body.style.cursor = '';
+          }
+        }}
         className="gem-interactive"
+        // provide descriptive metadata for tooling / developer accessibility
+        userData={{ 'aria-label': 'Joya de la corona, presiona para ver detalles' }}
       />
     </a.group>
   );

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';  
-import { getEvents, urlFor } from '../lib/sanity';
+import { getEvents, imageUrl } from '../lib/sanity';
 import type { Event } from '../Types/sanity';
 import EventCard from '../Components/EventCard';
 import { sharedStyles } from '../styles/sharedStyles';
@@ -14,7 +14,12 @@ export default function EventsPage() {
     async function fetchEvents() {
       try {
         const eventsData = await getEvents();
-        setEvents(eventsData);
+        const sorted = [...eventsData].sort((a, b) => {
+          const da = a.date ? new Date(a.date).getTime() : Number.MAX_SAFE_INTEGER;
+          const db = b.date ? new Date(b.date).getTime() : Number.MAX_SAFE_INTEGER;
+          return da - db;
+        });
+        setEvents(sorted);
         setError(null);
       } catch (err) {
         console.error('Error fetching events:', err);
@@ -93,14 +98,10 @@ export default function EventsPage() {
               key={event._id}
               _id={event._id}
               title={event.title}
-              date={new Date(event.date).toLocaleDateString('es-ES', {
-                year: 'numeric',
-                month: 'long',
-                day: 'numeric'
-              })}
-              description={event.description}
-              imageUrl={event.image ? urlFor(event.image).toString() : ''}
-              location={event.location}
+              date={event.date}
+              description={event.description || ''}
+              imageUrl={event.image ? imageUrl(event.image, { width: 350, height: 200 }) : ''}
+              location={event.location || ''}
               department={event.department || ''}
             />
           ))}

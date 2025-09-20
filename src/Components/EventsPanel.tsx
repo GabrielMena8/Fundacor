@@ -1,6 +1,6 @@
 // src/Components/EventsPanel.tsx
 import React, { useEffect, useState } from 'react';
-import { getEvents, urlFor } from '../lib/sanity';
+import { getEvents, imageUrl } from '../lib/sanity';
 import type { Event } from '../Types/sanity';
 import EventCard from './EventCard';
 import { LinkButton } from './ui/Button';
@@ -20,7 +20,12 @@ export const EventsPanel: React.FC<EventsPanelProps> = ({ show }) => {
     const fetchEvents = async () => {
       try {
         const eventsData = await getEvents();
-        setEvents(eventsData);
+        const sorted = [...eventsData].sort((a, b) => {
+          const da = a.date ? new Date(a.date).getTime() : Number.MAX_SAFE_INTEGER;
+          const db = b.date ? new Date(b.date).getTime() : Number.MAX_SAFE_INTEGER;
+          return da - db;
+        });
+        setEvents(sorted);
         setError(null);
       } catch (err) {
         console.error('Error fetching events:', err);
@@ -40,7 +45,7 @@ export const EventsPanel: React.FC<EventsPanelProps> = ({ show }) => {
 
   return (
     <div
-      className="fixed md:right-0 inset-x-0 md:inset-x-auto top-0 bottom-0 w-full md:w-[400px] bg-[#1F322E]/90 backdrop-blur-lg shadow-2xl z-50 overflow-hidden"
+      className="fixed md:right-0 inset-x-0 md:inset-x-auto top-0 bottom-0 w-full md:w-[420px] bg-[#1F322E]/90 backdrop-blur-lg shadow-2xl z-50 overflow-hidden"
       style={{
         opacity: show ? 1 : 0,
         transform: show ? 'translateX(0)' : 'translateX(100%)',
@@ -77,16 +82,13 @@ export const EventsPanel: React.FC<EventsPanelProps> = ({ show }) => {
                 <EventCard
                   key={event._id}
                   _id={event._id}
-                  title={event.title}
-                  date={new Date(event.date).toLocaleDateString('es-ES', {
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric'
-                  })}
-                  description={event.description}
-                  imageUrl={event.image ? urlFor(event.image).toString() : ''}
-                  location={event.location}
+                  title={event.title || ''}
+                  date={event.date || ''}
+                  description={event.description || ''}
+                  imageUrl={event.image ? imageUrl(event.image) : ''}
+                  location={event.location || ''}
                   department={event.department || ''}
+                  variant="panel"
                   style={{
                     opacity: show ? 1 : 0,
                     transform: show ? 'translateX(0)' : 'translateX(-1rem)',
@@ -98,7 +100,10 @@ export const EventsPanel: React.FC<EventsPanelProps> = ({ show }) => {
 
               {events.length === 0 && (
                 <div className="text-center text-white/80 mt-8 min-h-[200px] flex items-center justify-center">
-                  <p>No hay eventos programados.</p>
+                  <div>
+                    <p className="mb-2">No hay eventos programados en este momento.</p>
+                    <p className="text-sm text-white/70">Revisa más tarde o visita nuestro Studio para agregar eventos.</p>
+                  </div>
                 </div>
               )}
 
