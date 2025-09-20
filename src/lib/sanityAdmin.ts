@@ -3,12 +3,16 @@ import type { Member } from '../Types/sanity';
 
 // Create an authenticated client for admin operations
 // This should only be used in server-side code or secure environments
+const projectId = import.meta.env.VITE_SANITY_PROJECT_ID || 'ut4uykcs';
+const dataset = import.meta.env.VITE_SANITY_DATASET || 'production';
+const apiVersion = import.meta.env.VITE_SANITY_API_VERSION || '2024-03-19';
+
 export const adminClient = createClient({
-  projectId: import.meta.env.VITE_SANITY_PROJECT_ID,
-  dataset: import.meta.env.VITE_SANITY_DATASET,
+  projectId,
+  dataset,
   useCdn: false, // We want real-time data for admin operations
-  apiVersion: import.meta.env.VITE_SANITY_API_VERSION || '2024-03-19',
-  token: import.meta.env.VITE_SANITY_TOKEN, // Token is only used server-side
+  apiVersion,
+  token: import.meta.env.VITE_SANITY_TOKEN,
   perspective: 'published',
 });
 

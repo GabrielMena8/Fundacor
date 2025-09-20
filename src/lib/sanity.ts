@@ -2,28 +2,25 @@ import { createClient } from '@sanity/client';
 import imageUrlBuilder from '@sanity/image-url';
 import type { SanityImage, Member, DepartmentDoc, Event } from '../Types/sanity';
 
+// Resolve env with sensible defaults to avoid crashing in deployments
+const projectId = import.meta.env.VITE_SANITY_PROJECT_ID || 'ut4uykcs';
+const dataset = import.meta.env.VITE_SANITY_DATASET || 'production';
+const apiVersion = import.meta.env.VITE_SANITY_API_VERSION || '2024-03-19';
 
-if (!import.meta.env.VITE_SANITY_PROJECT_ID) {
-  throw new Error('Missing VITE_SANITY_PROJECT_ID in environment variables');
-}
-
-if (!import.meta.env.VITE_SANITY_DATASET) {
-  throw new Error('Missing VITE_SANITY_DATASET in environment variables');
+if (!import.meta.env.VITE_SANITY_PROJECT_ID || !import.meta.env.VITE_SANITY_DATASET) {
+  console.warn('[sanity] Using fallback projectId/dataset. Configure VITE_SANITY_PROJECT_ID and VITE_SANITY_DATASET to silence this warning.');
 }
 
 // Create a read-only client for the browser
 // Build a proper apiHost for dev that includes the origin so the Sanity client
 // does not end up constructing an invalid URL (it needs a protocol).
 const isBrowser = typeof window !== 'undefined';
-const devApiHost = import.meta.env.DEV && isBrowser
-  ? `${window.location.origin}/sanity`
-  : undefined;
 
 export const client = createClient({
-  projectId: import.meta.env.VITE_SANITY_PROJECT_ID,
-  dataset: import.meta.env.VITE_SANITY_DATASET,
+  projectId,
+  dataset,
   useCdn: true,
-  apiVersion: import.meta.env.VITE_SANITY_API_VERSION || '2024-03-19',
+  apiVersion,
   // Do NOT ship tokens to the browser; fixes Sanity warning and enables CDN caching
   token: isBrowser ? undefined : import.meta.env.VITE_SANITY_READ_TOKEN,
   perspective: 'published'
