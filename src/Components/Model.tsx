@@ -21,7 +21,7 @@ const ModelContent: React.FC<ModelProps> = ({
   const { nodes, scene } = useGLTF('/LogoFUNDACOR.gltf', true) as unknown as GLTFResult; // Enable draco
   const groupRef = useRef<THREE.Group>(null);
   const gemRef = useRef<THREE.Mesh>(null);
-  const glowRef = useRef<THREE.Sprite | null>(null);
+  const glowRef = useRef<THREE.Mesh | null>(null);
   const gemMaterialRef = useRef<MeshStandardMaterial | null>(null);
   const [hovered, setHovered] = useState(false);
 
@@ -62,12 +62,14 @@ const ModelContent: React.FC<ModelProps> = ({
         grd.addColorStop(1, 'rgba(255,221,8,0)');
         ctx.fillStyle = grd;
         ctx.fillRect(0, 0, size, size);
-        const tex = new THREE.CanvasTexture(canvas);
-        tex.needsUpdate = true;
-        const spriteMat = new THREE.SpriteMaterial({ map: tex, color: 0xFFFFFF, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false });
-        const sprite = new THREE.Sprite(spriteMat);
-        sprite.scale.set(1.6, 1.6, 1);
-        glowRef.current = sprite;
+  const tex = new THREE.CanvasTexture(canvas);
+  tex.needsUpdate = true;
+  const mat = new THREE.MeshBasicMaterial({ map: tex, color: 0xffffff, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, depthTest: false, side: THREE.DoubleSide });
+  const geo = new THREE.PlaneGeometry(1.6, 1.6);
+  const mesh = new THREE.Mesh(geo, mat);
+  mesh.renderOrder = 999;
+  mesh.frustumCulled = false;
+  glowRef.current = mesh;
         // attach later when gemRef is available
       }
     } catch {
@@ -104,12 +106,17 @@ const ModelContent: React.FC<ModelProps> = ({
       // update glow size and intensity if available
       if (glowRef.current && gemRef.current) {
         const glowScale = 1.2 + pulse * (hovered ? 0.9 : 0.6);
-        glowRef.current.scale.set(glowScale * s, glowScale * s, 1);
-        const mat = glowRef.current.material as THREE.SpriteMaterial;
-        if (mat) mat.opacity = Math.min(1, 0.25 + pulse * (hovered ? 0.9 : 0.6));
+        glowRef.current.scale.set(glowScale, glowScale, 1);
+        const mb = glowRef.current.material as THREE.MeshBasicMaterial | undefined;
+        if (mb && typeof mb.opacity === 'number') {
+          mb.opacity = Math.min(1, 0.25 + pulse * (hovered ? 0.9 : 0.6));
+          mb.needsUpdate = true;
+        }
       }
     }
   });
+
+  // no quaternion copying needed: glow is a mesh child of the gem so it follows transforms
 
   // Center model optimization
   useEffect(() => {
@@ -167,6 +174,78 @@ const ModelContent: React.FC<ModelProps> = ({
     return () => window.removeEventListener('keydown', onKey);
   }, [hovered, disableInteractivity, onTopClick]);
 
+  // Attach glow sprite to the gem when both are ready
+  useEffect(() => {
+    const gem = gemRef.current;
+    const glow = glowRef.current;
+    if (!gem || !glow) return;
+
+    // compute gem geometry center (local) to align glow with the actual jewel surface
+    try {
+      const gemNode = nodes.Curve003 as unknown as THREE.Mesh;
+      const localCenter = new THREE.Vector3();
+      if (gemNode && gemNode.geometry) {
+        const geom = gemNode.geometry as THREE.BufferGeometry;
+        if (!geom.boundingBox) geom.computeBoundingBox();
+        if (geom.boundingBox) geom.boundingBox.getCenter(localCenter);
+      }
+      // nudging slightly forward on local z to sit above surface
+      localCenter.z += 0.06;
+
+      // try to compute a surface normal near the center so the plane aligns with the jewel
+      try {
+        const geom = (nodes.Curve003 as unknown as THREE.Mesh).geometry as THREE.BufferGeometry;
+        const posAttr = geom.getAttribute('position');
+        const norAttr = geom.getAttribute('normal');
+        if (posAttr && norAttr) {
+          let closestIndex = 0;
+          let closestDist = Infinity;
+          const v = new THREE.Vector3();
+          for (let i = 0; i < posAttr.count; i++) {
+            v.set(posAttr.getX(i), posAttr.getY(i), posAttr.getZ(i));
+            const d = v.distanceToSquared(localCenter);
+            if (d < closestDist) {
+              closestDist = d;
+              closestIndex = i;
+            }
+          }
+          const nx = norAttr.getX(closestIndex);
+          const ny = norAttr.getY(closestIndex);
+          const nz = norAttr.getZ(closestIndex);
+          const targetNormal = new THREE.Vector3(nx, ny, nz).normalize();
+          // orient plane's +Z to match targetNormal
+          const alignQuat = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 0, 1), targetNormal);
+          glow.quaternion.copy(alignQuat);
+        }
+      } catch {
+        // fallback: leave default orientation
+      }
+
+      // ensure it's not already attached
+      if (!gem.children.includes(glow)) {
+        gem.add(glow);
+        glow.position.copy(localCenter);
+        glow.scale.set(1.2, 1.2, 1);
+      }
+    } catch {
+      if (!gem.children.includes(glow)) {
+        gem.add(glow);
+        glow.position.set(0, 0.05, 0.12);
+        glow.scale.set(1.2, 1.2, 1);
+      }
+    }
+
+    return () => {
+      try {
+        if (gem && glow && gem.children.includes(glow)) {
+          gem.remove(glow);
+        }
+      } catch {
+        // ignore
+      }
+    };
+  }, [nodes.Curve003]);
+
   return (
     <a.group
       ref={groupRef}
@@ -200,13 +279,7 @@ const ModelContent: React.FC<ModelProps> = ({
         // provide descriptive metadata for tooling / developer accessibility
         userData={{ 'aria-label': 'Joya de la corona, presiona para ver detalles' }}
       />
-      {/* Attach glow sprite as child of gem mesh when both exist */}
-      {gemRef.current && glowRef.current && !gemRef.current.children.includes(glowRef.current) && (() => {
-        gemRef.current.add(glowRef.current);
-        // Position the sprite slightly in front of the gem
-        glowRef.current.position.set(0, 0.05, 0.1);
-        return null as unknown as JSX.Element;
-      })()}
+      {/* glow sprite is attached in useEffect to keep transform in sync */}
     </a.group>
   );
 };
