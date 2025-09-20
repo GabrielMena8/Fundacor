@@ -1,66 +1,135 @@
 // src/Components/OrganigramaPanel.tsx
-import React from 'react';
-import DepartmentCard, { DepartmentItem } from './DepartmentCard';
+import React, { useEffect, useState } from 'react';
+import MemberCard from './MemberCard';
+import { getMembers } from '../lib/sanity';
+import type { Member } from '../Types/sanity';
+import { Button } from './ui/Button';
 
 type OrganigramaPanelProps = {
   show: boolean;
-  mobile: boolean;
+  isMobile?: boolean;
 };
 
-const departments: DepartmentItem[] = [
-  { id: 'contraloria', name: 'Contraloría' },
-  { id: 'finanzas', name: 'Finanzas' },
-  { id: 'recursos-humanos', name: 'Recursos Humanos' },
-  { id: 'desarrollo-comunitario', name: 'Desarrollo Comunitario' },
-];
+// We'll group members dynamically by their `department` string
 
-const OrganigramaPanel: React.FC<OrganigramaPanelProps> = ({ show, mobile }) => {
-  if (mobile) {
-    return (
-      <div className="bg-[#1f322e] text-white p-6 font-caviardreams overflow-y-auto h-[calc(100vh-4rem)]">
-        <h2 className="text-2xl font-renogare mb-4 text-[#FFDD08]">Organización</h2>
-        <p className="text-sm mb-4 leading-relaxed">
-          FUNDACOR está organizada en diferentes áreas especializadas para asegurar un funcionamiento eficiente y coordinado de todas nuestras actividades.
-        </p>
-        <h3 className="text-xl font-semibold mb-3 text-[#FFDD08]">Principales Departamentos:</h3>
-        <div className="space-y-4">
-          {departments.map((dept) => (
-            <DepartmentCard key={dept.id} department={dept} />
-          ))}
-        </div>
-      </div>
-    );
-  } else {
-    return (
-      <div
-        className={`
-          fixed top-0 left-0 h-full w-full sm:w-1/2 md:w-1/3 lg:w-1/4
-          transform transition-transform duration-500 ease-in-out
-          ${show ? 'translate-x-0' : '-translate-x-full'}
-          bg-gradient-to-r from-[#1f322e]/90 via-[#2A433E]/85 to-[#3B544A]/80
-          text-white p-6 font-caviardreams overflow-y-auto
-        `}
-      >
-        <div className="flex flex-col h-auto rounded-bl-xl rounded-r-4xl p-4">
-          <h2 className="text-2xl text-center font-renogare font-bold mb-4 text-[#FFDD08]">
-            ¿Quiénes somos?
-          </h2>
-          <p className="text-base leading-relaxed mb-6">
-            La estructura organizacional de FUNDACOR está diseñada para maximizar la eficiencia y el impacto de nuestras iniciativas comunitarias.
-          </p>
-          <h3 className="text-xl font-semibold mb-3 text-[#FFDD08]">Áreas Principales:</h3>
-          <div className="grid grid-cols-1 gap-4">
-            {departments.map((dept) => (
-              <DepartmentCard key={dept.id} department={dept} />
-            ))}
+export const OrganigramaPanel: React.FC<OrganigramaPanelProps> = ({ show }) => {
+  const [members, setMembers] = useState<Member[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [expanded, setExpanded] = useState<Record<string, boolean>>({});
+
+  useEffect(() => {
+    const fetchMembers = async () => {
+      try {
+        const membersData = await getMembers();
+        setMembers(membersData);
+        setError(null);
+      } catch (err) {
+        console.error('Error fetching members:', err);
+        setError('Failed to load members');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchMembers();
+  }, []);
+
+  // dynamic grouping replaces fixed hierarchy
+
+  return (
+    <div 
+  className="fixed md:left-0 inset-x-0 md:inset-x-auto top-0 bottom-0 w-full md:w-[520px] bg-[#1F322E]/90 backdrop-blur-lg shadow-2xl z-50 overflow-hidden"
+      style={{
+        opacity: show ? 1 : 0,
+        transform: show ? 'translateX(0)' : 'translateX(-100%)',
+        transition: 'all 0.5s cubic-bezier(0.4, 0, 0.2, 1)',
+        visibility: show ? 'visible' : 'hidden'
+      }}
+    >
+      <div className="h-full overflow-y-auto pr-2">
+        <div className="p-4 md:p-6">
+          <div className="text-center mb-6">
+            <div className="flex items-center justify-center gap-3 mb-4">
+              <div className="w-8 h-[2px] bg-[#FFDD08]"></div>
+              <h2 className="text-[#FFDD08] text-xl md:text-2xl font-bold tracking-wider">
+                ORGANIGRAMA
+              </h2>
+              <div className="w-8 h-[2px] bg-[#FFDD08]"></div>
+            </div>
+            <p className="text-white/90 text-sm mb-6">
+              Conoce nuestro equipo y la estructura organizacional
+            </p>
           </div>
-          <p className="text-sm italic text-center text-[#FFDD08]/80 mt-4">
-            Trabajamos unidos para crear un impacto positivo en nuestra comunidad.
-          </p>
+
+          {loading ? (
+            <div className="flex items-center justify-center min-h-[200px]">
+              <div className="w-12 h-12 border-4 border-[#FFDD08] border-t-transparent rounded-full animate-spin"></div>
+            </div>
+          ) : error ? (
+            <div className="text-center text-white/80 min-h-[200px] flex items-center justify-center">
+              <p>{error}</p>
+            </div>
+          ) : (
+            <div className="space-y-8">
+              {members.length === 0 && (
+                <div className="text-center text-white/80 min-h-[200px] flex items-center justify-center">
+                  <div>
+                    <p className="mb-2">Aún no hay miembros registrados.</p>
+                    <p className="text-sm text-white/70">Agrega miembros desde el Studio o revisa la conexión.</p>
+                  </div>
+                </div>
+              )}
+              {Object
+                .entries(
+                  members.reduce((acc: Record<string, Member[]>, m) => {
+                    const dept = m.department || 'Sin departamento';
+                    if (!acc[dept]) acc[dept] = [];
+                    acc[dept].push(m);
+                    return acc;
+                  }, {})
+                )
+                .sort(([a], [b]) => a.localeCompare(b))
+                .map(([department, list]) => {
+                  const sorted = (list as Member[]).slice().sort((a, b) => a.name.localeCompare(b.name));
+                  const isExpanded = !!expanded[department];
+                  const visible = isExpanded ? sorted : sorted.slice(0, 3);
+                  return (
+                    <div key={department} className="space-y-3">
+                      <div className="flex items-center gap-2">
+                        <h3 className="text-[#FFDD08] text-sm font-medium uppercase tracking-wider">
+                          {department}
+                        </h3>
+                        <span className="text-[11px] px-2 py-0.5 rounded-full bg-[#FFDD08]/10 text-[#FFDD08]">
+                          {sorted.length}
+                        </span>
+                      </div>
+                      <div className="grid grid-cols-1 gap-5">
+                        {visible.map((member) => (
+                          <MemberCard key={member._id} member={member} />
+                        ))}
+                      </div>
+                      {sorted.length > 3 && (
+                        <div className="pt-1">
+                          <Button
+                            variant="secondary"
+                            size="sm"
+                            className="w-full border-[#FFDD08]/40 text-[#FFDD08] hover:text-[#FFDD08]"
+                            onClick={() => setExpanded((e) => ({ ...e, [department]: !isExpanded }))}
+                          >
+                            {isExpanded ? 'Mostrar menos' : `Mostrar todos (${sorted.length})`}
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+            </div>
+          )}
         </div>
       </div>
-    );
-  }
+    </div>
+  );
 };
 
 export default OrganigramaPanel;

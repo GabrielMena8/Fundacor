@@ -1,95 +1,140 @@
 // src/Components/EventsPanel.tsx
-import React from 'react';
+import React, { useEffect, useState } from 'react';
+import { getEvents, imageUrl } from '../lib/sanity';
+import type { Event } from '../Types/sanity';
 import EventCard from './EventCard';
-
-export type EventItem = {
-  id: string;          // ← Agregamos un id para enlazar al detalle
-  image: string;
-  title: string;
-  description: string;
-};
-
-// Datos de ejemplo, cada evento con un id único:
-const events: EventItem[] = [
-  {
-    id: 'evento1',
-    image: '/Eventos/Evento1.webp',
-    title: 'Evento 1',
-    description: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit.',
-  },
-  {
-    id: 'evento2',
-    image: '/Eventos/Evento2.webp',
-    title: 'Evento 2',
-    description: 'Suspendisse potenti. Nulla quis lorem libero.',
-  },
-  {
-    id: 'evento3',
-    image: '/Eventos/Evento3.webp',
-    title: 'Evento 3',
-    description: 'Curabitur ac felis at dolor tincidunt suscipit.',
-  },
-  {
-    id: 'evento4',
-    image: '/Eventos/Evento2.webp',
-    title: 'Evento 4',
-    description: 'Otro evento para verificar el scroll en móvil.',
-  },
-  {
-    id: 'evento5',
-    image: '/Eventos/Evento1.webp',
-    title: 'Evento 5',
-    description: 'Otro evento para verificar el scroll en móvil.',
-  },
-];
+import { LinkButton } from './ui/Button';
+import { Icon } from './ui/Icon';
 
 type EventsPanelProps = {
   show: boolean;
-  mobile: boolean;
+  isMobile?: boolean;
 };
 
-const EventsPanel: React.FC<EventsPanelProps> = ({ show, mobile }) => {
-  if (mobile) {
-    return (
-      <div className="h-[calc(100vh-4rem)] bg-[#1f322e] text-white p-6 font-caviardreams">
-        <h2 className="text-2xl font-renogare mb-4 text-[#ffdd08]">
-          Eventos Fundación Coromotana
-        </h2>
-        <div className="overflow-y-auto h-[calc(100%-4rem)]">
-          <div className="space-y-4">
-            {events.map((ev) => (
-              // Pasamos todas las propiedades: id, image, title, description
-              <EventCard key={ev.id} {...ev} />
-            ))}
+export const EventsPanel: React.FC<EventsPanelProps> = ({ show }) => {
+  const [events, setEvents] = useState<Event[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchEvents = async () => {
+      try {
+        const eventsData = await getEvents();
+        const sorted = [...eventsData].sort((a, b) => {
+          const da = a.date ? new Date(a.date).getTime() : Number.MAX_SAFE_INTEGER;
+          const db = b.date ? new Date(b.date).getTime() : Number.MAX_SAFE_INTEGER;
+          return da - db;
+        });
+        setEvents(sorted);
+        setError(null);
+      } catch (err) {
+        console.error('Error fetching events:', err);
+        setError('Failed to load events');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchEvents();
+  }, []);
+
+  const handleViewAllClick = () => {
+    // Allow navigation to happen
+    // No need to prevent default or close panel
+  };
+
+  return (
+    <div
+      className="fixed md:right-0 inset-x-0 md:inset-x-auto top-0 bottom-0 w-full md:w-[420px] bg-[#1F322E]/90 backdrop-blur-lg shadow-2xl z-50 overflow-hidden"
+      style={{
+        opacity: show ? 1 : 0,
+        transform: show ? 'translateX(0)' : 'translateX(100%)',
+        transition: 'all 0.5s cubic-bezier(0.4, 0, 0.2, 1)',
+        visibility: show ? 'visible' : 'hidden'
+      }}
+    >
+      <div className="h-full overflow-y-auto">
+        <div className="p-4 md:p-6">
+          <div className="text-center mb-6">
+            <div className="flex items-center justify-center gap-3 mb-4">
+              <div className="w-8 h-[2px] bg-[#FFDD08]"></div>
+              <h2 className="text-[#FFDD08] text-xl md:text-2xl font-bold tracking-wider">
+                EVENTOS
+              </h2>
+              <div className="w-8 h-[2px] bg-[#FFDD08]"></div>
+            </div>
+            <p className="text-white/90 text-sm mb-6">
+              Descubre nuestros próximos eventos y actividades
+            </p>
           </div>
+
+          {loading ? (
+            <div className="flex items-center justify-center min-h-[200px]">
+              <div className="w-12 h-12 border-4 border-[#FFDD08] border-t-transparent rounded-full animate-spin"></div>
+            </div>
+          ) : error ? (
+            <div className="text-center text-white/80 min-h-[200px] flex items-center justify-center">
+              <p>{error}</p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {events.map((event, index) => (
+                <EventCard
+                  key={event._id}
+                  _id={event._id}
+                  title={event.title || ''}
+                  date={event.date || ''}
+                  description={event.description || ''}
+                  imageUrl={event.image ? imageUrl(event.image) : ''}
+                  location={event.location || ''}
+                  department={event.department || ''}
+                  variant="panel"
+                  style={{
+                    opacity: show ? 1 : 0,
+                    transform: show ? 'translateX(0)' : 'translateX(-1rem)',
+                    transition: 'all 0.5s ease-out',
+                    transitionDelay: `${200 + (index * 75)}ms`
+                  }}
+                />
+              ))}
+
+              {events.length === 0 && (
+                <div className="text-center text-white/80 mt-8 min-h-[200px] flex items-center justify-center">
+                  <div>
+                    <p className="mb-2">No hay eventos programados en este momento.</p>
+                    <p className="text-sm text-white/70">Revisa más tarde o visita nuestro Studio para agregar eventos.</p>
+                  </div>
+                </div>
+              )}
+
+              <div 
+                className="flex justify-center mt-8 pb-4"
+                style={{ 
+                  opacity: show ? 1 : 0, 
+                  transform: show ? 'translateY(0)' : 'translateY(1rem)',
+                  transition: 'all 0.5s ease-out',
+                  transitionDelay: '800ms'
+                }}
+              >
+                <LinkButton 
+                  to="/eventos" 
+                  onClick={handleViewAllClick}
+                  variant="secondary"
+                  className="group"
+                >
+                  <span className="font-medium">Ver todos los eventos</span>
+                  <Icon 
+                    name="arrow-right"
+                    className="w-5 h-5 ml-2 transform group-hover:translate-x-1 transition-transform duration-300"
+                  />
+                </LinkButton>
+              </div>
+            </div>
+          )}
         </div>
       </div>
-    );
-  } else {
-    return (
-      <div
-        className={`
-          fixed top-0 right-0 h-full w-full sm:w-1/2 md:w-1/3 lg:w-1/4
-          transform transition-transform duration-500 ease-in-out
-          ${show ? 'translate-x-0' : 'translate-x-full'}
-          bg-gradient-to-l from-[#1f322e]/90 via-[#2A433E]/85 to-[#3B544A]/80
-          text-white p-6 font-caviardreams
-        `}
-        style={{ overflowY: 'auto' }}
-      >
-        <div className="flex flex-col h-auto rounded-bl-xl rounded-l-4xl p-4">
-          <h2 className="text-2xl text-center font-bold font-renogare mb-4 text-[#ffdd08]">
-            Eventos Fundación Coromotana
-          </h2>
-          <div className="grid grid-cols-1 gap-4 mb-6">
-            {events.map((ev) => (
-              <EventCard key={ev.id} {...ev} />
-            ))}
-          </div>
-        </div>
-      </div>
-    );
-  }
+    </div>
+  );
 };
 
 export default EventsPanel;

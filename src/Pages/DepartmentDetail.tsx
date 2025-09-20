@@ -1,110 +1,122 @@
 // src/Pages/DepartmentDetail.tsx
 import React, { useEffect, useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
-import MemberCard, { Member } from '../Components/MemberCard';
-
-type DepartmentData = {
-  id: string;
-  name: string;
-  members: Member[];
-};
+import { useParams } from 'react-router-dom';
+import { sharedStyles } from '../styles/sharedStyles';
+import { getMembers } from '../lib/sanity';
+import type { Member } from '../Types/sanity';
+import MemberCard from '../Components/MemberCard';
+import { BackButton } from '../Components/ui/Button';
 
 const DepartmentDetail: React.FC = () => {
-  const { departmentId } = useParams<{ departmentId: string }>();
-  const [department, setDepartment] = useState<DepartmentData | null>(null);
+  const { departmentName } = useParams<{ departmentName: string }>();
+  const [members, setMembers] = useState<Member[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const fetchDepartmentData = async () => {
-      const simulatedData: { [key: string]: DepartmentData } = {
-        contraloria: {
-          id: 'contraloria',
-          name: 'Contraloría',
-          members: [
-            {
-              id: '1',
-              name: 'Carlos López',
-              position: 'Director de Contraloría',
-              photo: '/Fotos/carlos-lopez.jpg',
-            },
-            {
-              id: '2',
-              name: 'Ana Martínez',
-              position: 'Analista de Contraloría',
-              photo: '/Fotos/ana-martinez.jpg',
-            },
-          ],
-        },
-        finanzas: {
-          id: 'finanzas',
-          name: 'Finanzas',
-          members: [
-            {
-              id: '3',
-              name: 'Roberto Gómez',
-              position: 'Gerente Financiero',
-              photo: '/Fotos/roberto-gomez.jpg',
-            },
-            {
-              id: '4',
-              name: 'Lucía Rodríguez',
-              position: 'Contadora',
-              photo: '/Fotos/lucia-rodriguez.jpg',
-            },
-          ],
-        },
-        'recursos-humanos': {
-          id: 'recursos-humanos',
-          name: 'Recursos Humanos',
-          members: [
-            {
-              id: '5',
-              name: 'Marina Pérez',
-              position: 'Jefa de RRHH',
-              photo: '/Fotos/marina-perez.jpg',
-            },
-          ],
-        },
-        'desarrollo-comunitario': {
-          id: 'desarrollo-comunitario',
-          name: 'Desarrollo Comunitario',
-          members: [
-            {
-              id: '6',
-              name: 'Miguel Díaz',
-              position: 'Coordinador de Desarrollo Comunitario',
-              photo: '/Fotos/miguel-diaz.jpg',
-            },
-          ],
-        },
-      };
-
-      const data = simulatedData[departmentId || ''] || null;
-      setDepartment(data);
+    const fetchMembers = async () => {
+      setLoading(true);
+      try {
+        if (!departmentName) {
+          throw new Error('No department name provided');
+        }
+        const allMembers = await getMembers();
+        console.log('All members:', allMembers);
+        
+        // Decode the URL parameter and capitalize first letter
+        const decodedDepartment = decodeURIComponent(departmentName);
+        const formattedDepartment = decodedDepartment.charAt(0).toUpperCase() + decodedDepartment.slice(1);
+        console.log('Looking for department:', formattedDepartment);
+        
+        const departmentMembers = allMembers.filter(member => {
+          console.log('Comparing:', member.department, 'with', formattedDepartment);
+          return member.department === formattedDepartment;
+        });
+        console.log('Filtered members:', departmentMembers);
+        
+        setMembers(departmentMembers);
+        setError(null);
+      } catch (err) {
+        console.error('Error fetching members:', err);
+        setError('Failed to load department members');
+      } finally {
+        setLoading(false);
+      }
     };
 
-    fetchDepartmentData();
-  }, [departmentId]);
+    fetchMembers();
+  }, [departmentName]);
 
-  if (!department) {
+  if (loading) {
     return (
-      <div className="p-6 font-caviardreams text-[#FFDD08] bg-gradient-to-l from-[#1f322e]/90 via-[#2A433E]/85 to-[#3B544A]/80 min-h-screen">
-        Cargando...
+      <div className={`min-h-screen ${sharedStyles.pageBg} p-6 flex items-center justify-center`}>
+        <div className="flex flex-col items-center">
+          <div className="w-16 h-16 border-4 border-[#FFDD08] border-t-transparent rounded-full animate-spin mb-4"></div>
+          <div className={`${sharedStyles.titleText} text-xl`}>Cargando miembros...</div>
+        </div>
       </div>
     );
   }
 
+  if (error) {
+    return (
+      <div className={`min-h-screen ${sharedStyles.pageBg} p-6 flex items-center justify-center`}>
+        <div className="text-center">
+          <h1 className={`${sharedStyles.titleText} text-4xl mb-4 drop-shadow-[0_2px_4px_rgba(0,0,0,0.4)]`}>
+            Error al cargar los miembros
+          </h1>
+          <p className="text-white/80 mb-6">{error}</p>
+          <BackButton />
+        </div>
+      </div>
+    );
+  }
+
+  const decodedDepartment = decodeURIComponent(departmentName || '');
+  const formattedDepartment = decodedDepartment.charAt(0).toUpperCase() + decodedDepartment.slice(1);
+
   return (
-    <div className="min-h-screen bg-gradient-to-l from-[#1f322e]/90 via-[#2A433E]/85 to-[#3B544A]/80 p-6 font-caviardreams">
-      <Link to="/" className="font-renogare text-[#FFDD08] hover:underline">
-        ← Volver
-      </Link>
-      <h1 className="text-3xl font-renogare text-[#FFDD08] mt-4 mb-8 text-center">
-        {department.name}
-      </h1>
-      <div className="grid gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
-        {department.members.map((member) => (
-          <MemberCard key={member.id} member={member} />
-        ))}
+    <div className={`min-h-screen ${sharedStyles.pageBg}`}>
+      {/* Fixed back button on mobile */}
+      <div className="sticky top-0 left-0 right-0 z-[100] bg-[#1F322E]/80 backdrop-blur-md shadow-lg px-4 py-2 sm:hidden">
+        <BackButton />
+      </div>
+      
+      <div className={`${sharedStyles.container} relative z-10 p-6`}>
+        {/* Desktop back button (hidden on mobile) */}
+        <div className="hidden sm:block mb-8">
+          <BackButton variant="subtle" />
+        </div>
+        
+        <div className="text-center mb-12">
+          <div className="relative">
+            <div className="absolute inset-0 flex items-center justify-center blur-sm opacity-20">
+              <h1 className={`${sharedStyles.importantHeader} text-6xl ${sharedStyles.titleGlow}`}>
+                {formattedDepartment}
+              </h1>
+            </div>
+            <h1 className={`${sharedStyles.importantHeader} text-4xl md:text-5xl mb-4 relative z-10 ${sharedStyles.titleGlow}`}>
+              {formattedDepartment}
+            </h1>
+          </div>
+          <div className="flex items-center justify-center space-x-4">
+            <div className={`w-16 h-1 ${sharedStyles.divider}`}></div>
+            <div className={`w-24 h-1 ${sharedStyles.accentDivider}`}></div>
+            <div className={`w-16 h-1 ${sharedStyles.divider}`}></div>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {members.map((member) => (
+            <MemberCard key={member._id} member={member} />
+          ))}
+        </div>
+
+        {members.length === 0 && (
+          <div className="text-center text-white/80 mt-8">
+            No hay miembros en este departamento.
+          </div>
+        )}
       </div>
     </div>
   );

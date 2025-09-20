@@ -1,7 +1,8 @@
 // src/Pages/LandingPage.tsx
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
+import { getEvents, getMembers, getDepartments } from '../lib/sanity';
 import { Canvas } from '@react-three/fiber';
-import { Environment } from '@react-three/drei';
+import { Environment, Preload } from '@react-three/drei';
 import { useSpring } from '@react-spring/three';
 import Model from '../Components/Model';
 import AnimatedCamera from '../Components/AnimatedCamera';
@@ -10,12 +11,76 @@ import OrganigramaPanel from '../Components/OrganigramaPanel';
 import MissionVisionPanel from '../Components/MissionVisionPanel';
 import { useMediaQuery } from '../Hooks/useMediaQuery';
 import { ModelRotationProps } from '../Types/modelTypes';
+import { sharedStyles } from '../styles/sharedStyles';
+
+// SVG logo path for background pattern
+const logoBackgroundUrl = new URL('/LogoFUNDACOR.svg', import.meta.url).href;
+
+// Progressive loading states
+const LoadingStates = {
+  INITIAL: 'initial',
+  MODEL_LOADED: 'model_loaded',
+  COMPLETE: 'complete'
+} as const;
+
+type LoadingState = typeof LoadingStates[keyof typeof LoadingStates];
+
+const Loader: React.FC<{ loadingState: LoadingState }> = ({ loadingState }) => {
+  const getLoadingText = () => {
+    switch (loadingState) {
+      case LoadingStates.INITIAL:
+        return 'Iniciando...';
+      case LoadingStates.MODEL_LOADED:
+        return 'Cargando recursos...';
+      case LoadingStates.COMPLETE:
+        return 'Completado';
+      default:
+        return 'Cargando...';
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 bg-gradient-to-l from-[#1f322e]/50 via-[#2A433E]/40 to-[#3B544A]/30 backdrop-blur-sm flex items-center justify-center z-50">
+      <div className="flex flex-col items-center">
+        <div className="w-16 h-16 border-4 border-[#FFDD08]/80 border-t-transparent rounded-full animate-spin mb-4"></div>
+        <div className={`${sharedStyles.titleText} text-xl opacity-80`}>{getLoadingText()}</div>
+        <div className="mt-2 text-sm text-white/60">
+          {loadingState === LoadingStates.MODEL_LOADED && 'Optimizando renderizado...'}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const Tooltip: React.FC<{ show: boolean }> = ({ show }) => {
+  return (
+    <div className={`fixed bottom-8 left-1/2 transform -translate-x-1/2 z-[60] transition-all duration-500 ${show ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4 pointer-events-none'}`}>
+      <div className="bg-[#1f322e]/95 backdrop-blur-md border-2 border-[#FFDD08]/50 rounded-xl p-4 shadow-lg shadow-[#FFDD08]/20">
+        <div className="flex items-center space-x-3">
+          <div className="flex-shrink-0">
+            <svg className="w-6 h-6 text-[#FFDD08]" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+            </svg>
+          </div>
+          <div>
+            <h3 className={`${sharedStyles.importantHeader} text-lg mb-1 ${sharedStyles.titleGlow}`}>¡Explora la Corona!</h3>
+            <p className={`${sharedStyles.bodyText} text-sm`}>
+              Haz clic en los diferentes elementos para descubrir más información
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 const LandingPage: React.FC = () => {
   const isMobileOrTablet = useMediaQuery('(max-width: 768px)');
+  const [loadingState, setLoadingState] = useState<LoadingState>(LoadingStates.INITIAL);
+  const [showTooltip, setShowTooltip] = useState(true);
 
   // -------- POSICIONES DE CÁMARA --------
-  const initialCameraPosMobile: [number, number, number] = [0, 0, 15];
+  const initialCameraPosMobile: [number, number, number] = [0, 0, 15]; // Restore original position
   const initialCameraPosDesktop: [number, number, number] = [0, 1, 15];
 
   const alternativeCameraPosRight: [number, number, number] = [4, 1, 12];
@@ -39,14 +104,46 @@ const LandingPage: React.FC = () => {
   const isAnyPanelOpen =
     showEventsPanel || showOrganigramaPanel || showMissionVisionPanel;
 
-  // Tooltip (solo desktop)
-  const [showTooltip, setShowTooltip] = useState(true);
+  // Loading state management
   useEffect(() => {
-    if (!isMobileOrTablet) {
-      const timer = setTimeout(() => setShowTooltip(false), 4000);
-      return () => clearTimeout(timer);
+    // Initial loading state
+    const initialTimer = setTimeout(() => {
+      setLoadingState(LoadingStates.MODEL_LOADED);
+    }, 1000);
+
+    // Complete loading state
+    const completeTimer = setTimeout(() => {
+      setLoadingState(LoadingStates.COMPLETE);
+      setShowTooltip(false);
+    }, 2000);
+
+    // Add event listener for closing events panel
+    const handleCloseEventsPanel = () => {
+      setShowEventsPanel(false);
+    };
+    
+    window.addEventListener('closeEventsPanel', handleCloseEventsPanel);
+    // Background prefetch: data + next route chunk
+    // Fire and forget; errors are non-fatal
+    getEvents().catch(() => undefined);
+    getMembers().catch(() => undefined);
+    getDepartments().catch(() => undefined);
+    // Warm React.lazy chunks when idle
+    const w = window as Window & { requestIdleCallback?: (cb: () => void) => void };
+    if (typeof w.requestIdleCallback === 'function') {
+      w.requestIdleCallback(() => { void import('./EventsPage'); });
+    } else {
+      setTimeout(() => import('./EventsPage'), 1500);
     }
-  }, [isMobileOrTablet]);
+    
+    return () => {
+      clearTimeout(initialTimer);
+      clearTimeout(completeTimer);
+      window.removeEventListener('closeEventsPanel', handleCloseEventsPanel);
+    };
+  }, []); // Run once on component mount
+
+  const isLoading = loadingState !== LoadingStates.COMPLETE;
 
   // -------- ANIMACIÓN DE ROTACIÓN DEL MODELO --------
   const [springs, api] = useSpring(() => ({
@@ -204,11 +301,139 @@ const LandingPage: React.FC = () => {
   // -------- RENDER --------
   return (
     <div className="w-screen h-screen bg-gradient-to-b from-[#f4e7e7] to-[#F5F5F5] relative font-caviardreams">
+      {isLoading && <Loader loadingState={loadingState} />}
+      
+      {/* Copyright disclaimer */}
+      <div className="absolute bottom-2 left-1/2 transform -translate-x-1/2 text-xs text-[#1F322E]/70 text-center z-10 w-full px-4">
+        <p>© 2023 Fundación Coromotana. Todos los derechos reservados.</p>
+        <p className="text-[10px] mt-1">Diseño por Vortex.</p>
+      </div>
+      
+      {/* Show tooltip only if not loading */}
+      {showTooltip && !isLoading && <Tooltip show={showTooltip} />}
+      
       {isMobileOrTablet ? (
         // ---------------- MÓVIL/TABLET ----------------
         <div className="flex flex-col h-full">
-          <div className="w-full h-1/2">
+          {/* SVG Background Pattern */}
+          <div 
+            className="absolute inset-0 z-0 opacity-15" 
+            style={{ 
+              backgroundImage: `url(${logoBackgroundUrl})`,
+              backgroundRepeat: 'repeat',
+              backgroundSize: '200px',
+              backgroundPosition: '30px 30px',
+              filter: 'blur(0.5px)',
+              pointerEvents: 'none',
+              willChange: 'background-image'
+            }}
+            role="presentation"
+            aria-hidden="true"
+          />
+          
+          <div className="w-full h-3/5 relative z-10 flex items-center justify-center">
             <Canvas className="w-full h-full" camera={{ position: initialCameraPos, fov: 40 }}>
+              <Suspense fallback={null}>
+                <ambientLight intensity={0.5} />
+                <directionalLight position={[10, 10, 5]} intensity={1.5} />
+                <Environment preset="sunset" />
+                <Model
+                  onLeftClick={handleLeftClick}
+                  onRightClick={handleRightClick}
+                  onTopClick={handleTopClick}
+                  rotation={modelRotation}
+                  scale={modelScale}
+                  disableInteractivity={isLoading}
+                />
+                <AnimatedCamera target={cameraTarget} />
+                <Preload all />
+              </Suspense>
+            </Canvas>
+            
+            {/* Mobile navigation guidance - show more prominent buttons instead */}
+            {!isAnyPanelOpen && (
+              <div className="absolute bottom-4 left-0 right-0 flex justify-center">
+                <div className="bg-[#1F322E]/80 backdrop-blur-sm rounded-full px-5 py-3 flex items-center space-x-3 shadow-lg border border-[#FFDD08]/20">
+                  <div className="text-xs text-center text-white/80">
+                    <span className="text-[#FFDD08] font-renogare">Toca</span> los botones para explorar
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Mobile navigation buttons - make these more prominent */}
+          {!isAnyPanelOpen && (
+            <div className="absolute bottom-28 left-0 right-0 flex justify-center items-center space-x-6 z-20">
+              <button 
+                onClick={handleLeftClick}
+                className="p-4 bg-[#1F322E]/90 rounded-full shadow-lg border-2 border-[#FFDD08]/50 hover:border-[#FFDD08]/80 transition-all duration-300 active:scale-95"
+                aria-label="Ver organigrama"
+              >
+                <svg className="w-7 h-7 text-[#FFDD08]" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                </svg>
+              </button>
+              <button 
+                onClick={handleTopClick}
+                className="p-4 bg-[#1F322E]/90 rounded-full shadow-lg border-2 border-[#FFDD08]/50 hover:border-[#FFDD08]/80 transition-all duration-300 active:scale-95"
+                aria-label="Ver misión y visión"
+              >
+                <svg className="w-7 h-7 text-[#FFDD08]" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                </svg>
+              </button>
+              <button 
+                onClick={handleRightClick}
+                className="p-4 bg-[#1F322E]/90 rounded-full shadow-lg border-2 border-[#FFDD08]/50 hover:border-[#FFDD08]/80 transition-all duration-300 active:scale-95"
+                aria-label="Ver eventos"
+              >
+                <svg className="w-7 h-7 text-[#FFDD08]" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+              </button>
+            </div>
+          )}
+
+          {/* Render panels */}
+          <div className="w-full flex flex-col">
+            <EventsPanel show={showEventsPanel} isMobile={isMobileOrTablet} />
+            <OrganigramaPanel show={showOrganigramaPanel} isMobile={isMobileOrTablet} />
+            <MissionVisionPanel show={showMissionVisionPanel} isMobile={isMobileOrTablet} />
+          </div>
+          {/* Show a close button when a panel is open */}
+          {isAnyPanelOpen && (
+            <button 
+              onClick={resetToInitialState}
+              className="fixed top-4 right-4 p-2 bg-[#1F322E]/90 rounded-full shadow-lg border border-[#FFDD08]/30 hover:border-[#FFDD08]/50 transition-all duration-300 z-50"
+            >
+              <svg className="w-5 h-5 text-[#FFDD08]" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          )}
+        </div>
+      ) : (
+        // ---------------- DESKTOP ----------------
+        <div className="relative w-full h-full">
+          {/* SVG Background Pattern */}
+          <div 
+            className="absolute inset-0 z-0 opacity-15" 
+            style={{ 
+              backgroundImage: `url(${logoBackgroundUrl})`,
+              backgroundRepeat: 'repeat',
+              backgroundSize: '200px',
+              backgroundPosition: '30px 30px',
+              filter: 'blur(0.5px)',
+              pointerEvents: 'none',
+              willChange: 'background-image'
+            }}
+            role="presentation"
+            aria-hidden="true"
+          />
+          
+          <Canvas className="absolute inset-0 z-10" camera={{ position: initialCameraPos, fov: 40 }}>
+            <Suspense fallback={null}>
               <ambientLight intensity={0.5} />
               <directionalLight position={[10, 10, 5]} intensity={1.5} />
               <Environment preset="sunset" />
@@ -218,52 +443,17 @@ const LandingPage: React.FC = () => {
                 onTopClick={handleTopClick}
                 rotation={modelRotation}
                 scale={modelScale}
-                disableInteractivity={false}
+                disableInteractivity={isLoading}
               />
               <AnimatedCamera target={cameraTarget} />
-            </Canvas>
-          </div>
-
-          {/* Render condicional de paneles según estado */}
-          <div className="w-full flex flex-col">
-            {showEventsPanel && <EventsPanel show={true} mobile={true} />}
-            {showOrganigramaPanel && <OrganigramaPanel show={true} mobile={true} />}
-            {showMissionVisionPanel && <MissionVisionPanel show={true} mobile={true} />}
-          </div>
-        </div>
-      ) : (
-        // ---------------- DESKTOP ----------------
-        <div className="relative w-full h-full">
-          <Canvas className="absolute inset-0" camera={{ position: initialCameraPos, fov: 40 }}>
-            <ambientLight intensity={0.5} />
-            <directionalLight position={[10, 10, 5]} intensity={1.5} />
-            <Environment preset="sunset" />
-            <Model
-              onLeftClick={handleLeftClick}
-              onRightClick={handleRightClick}
-              onTopClick={handleTopClick}
-              rotation={modelRotation}
-              scale={modelScale}
-            />
-            <AnimatedCamera target={cameraTarget} />
+              <Preload all />
+            </Suspense>
           </Canvas>
 
-          {/* Overlays en desktop */}
-          <OrganigramaPanel show={showOrganigramaPanel} mobile={false} />
-          <EventsPanel show={showEventsPanel} mobile={false} />
-          <MissionVisionPanel show={showMissionVisionPanel} mobile={false} />
-        </div>
-      )}
-
-      {/* Logo y tooltip cuando no hay panel abierto */}
-      {!isAnyPanelOpen && (
-        <div className="absolute top-2 left-2 z-50 flex items-center space-x-2 bg-white/20 px-4 pb-4 rounded-xl shadow-lg">
-          <img src="/LogoFUNDACOR.svg" alt="Logo" className="w-36" />
-          {!isMobileOrTablet && showTooltip && (
-            <span className="font-renogare text-sm text-[#1F322E] bg-[#FFDD08] px-2 py-1 rounded">
-              Haz clic en la gema para explorar
-            </span>
-          )}
+          {/* Render panels */}
+          <EventsPanel show={showEventsPanel} isMobile={isMobileOrTablet} />
+          <OrganigramaPanel show={showOrganigramaPanel} isMobile={isMobileOrTablet} />
+          <MissionVisionPanel show={showMissionVisionPanel} isMobile={isMobileOrTablet} />
         </div>
       )}
     </div>
