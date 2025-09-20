@@ -1,6 +1,6 @@
 // src/Components/Model.tsx
 import React, { useEffect, useRef, Suspense, useState } from 'react';
-import { useGLTF, useTexture, Loader, useBVH } from '@react-three/drei';
+import { useGLTF } from '@react-three/drei';
 import { a } from '@react-spring/three';
 import * as THREE from 'three';
 import { MeshStandardMaterial, Box3, Vector3, Object3D } from 'three';
@@ -21,31 +21,69 @@ const ModelContent: React.FC<ModelProps> = ({
   const { nodes, scene } = useGLTF('/LogoFUNDACOR.gltf', true) as unknown as GLTFResult; // Enable draco
   const groupRef = useRef<THREE.Group>(null);
   const gemRef = useRef<THREE.Mesh>(null);
+  const glowRef = useRef<THREE.Sprite | null>(null);
   const gemMaterialRef = useRef<MeshStandardMaterial | null>(null);
   const [hovered, setHovered] = useState(false);
 
-  // Apply BVH for optimized raycasting
-  useBVH(scene);
+  // (BVH optimization removed - keep code simpler and avoid extra typings)
 
   // Cache materials and geometries
   useEffect(() => {
     if (nodes.Curve003?.material) {
       const material = (nodes.Curve003.material as MeshStandardMaterial).clone();
-      material.roughness = 0.5; // Optimize material properties
-      material.metalness = 0.8;
-  // Give the gem an emissive base so it can "shine" when pulsing
-  // Use brand yellow to match UI accents
-  material.emissive = new THREE.Color(0xFFDD08);
-      material.emissiveIntensity = 0.0;
+      // Make the gem shinier
+      material.roughness = 0.15;
+      material.metalness = 0.95;
+      // Emissive base using brand yellow
+      material.emissive = new THREE.Color(0xFFDD08);
+      // Start with a visible emissiveIntensity so the gem is noticeable
+      material.emissiveIntensity = 0.15;
+      // Slightly increase envMapIntensity if available for extra shine
+      const matAny = material as unknown as Record<string, unknown>;
+      if (typeof matAny.envMapIntensity === 'number') {
+        (matAny.envMapIntensity as number) = 1.2;
+      }
+
       nodes.Curve003.material = material;
       gemMaterialRef.current = material;
     }
 
-    // Optimize geometries
+    // Create a radial glow sprite texture and sprite, attach to gem
+    try {
+      const size = 256;
+      const canvas = document.createElement('canvas');
+      canvas.width = size;
+      canvas.height = size;
+      const ctx = canvas.getContext('2d');
+      if (ctx) {
+        const grd = ctx.createRadialGradient(size / 2, size / 2, 0, size / 2, size / 2, size / 2);
+        grd.addColorStop(0, 'rgba(255,221,8,0.95)');
+        grd.addColorStop(0.4, 'rgba(255,221,8,0.6)');
+        grd.addColorStop(1, 'rgba(255,221,8,0)');
+        ctx.fillStyle = grd;
+        ctx.fillRect(0, 0, size, size);
+        const tex = new THREE.CanvasTexture(canvas);
+        tex.needsUpdate = true;
+        const spriteMat = new THREE.SpriteMaterial({ map: tex, color: 0xFFFFFF, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false });
+        const sprite = new THREE.Sprite(spriteMat);
+        sprite.scale.set(1.6, 1.6, 1);
+        glowRef.current = sprite;
+        // attach later when gemRef is available
+      }
+    } catch {
+      // ignore if DOM unavailable
+    }
+
+    // Optimize geometries where available
     Object.values(nodes).forEach((node: Object3D) => {
-      if ('geometry' in node && node.geometry) {
-        node.geometry.computeBoundingBox();
-        node.geometry.computeBoundingSphere();
+      // geometry can be BufferGeometry with computeBoundingBox/computeBoundingSphere
+      // Use runtime checks to avoid TS errors
+      const anyNode = node as unknown as { geometry?: { computeBoundingBox?: () => void; computeBoundingSphere?: () => void } };
+      if (anyNode.geometry && typeof anyNode.geometry.computeBoundingBox === 'function') {
+        anyNode.geometry.computeBoundingBox();
+      }
+      if (anyNode.geometry && typeof anyNode.geometry.computeBoundingSphere === 'function') {
+        anyNode.geometry.computeBoundingSphere();
       }
     });
   }, [nodes]);
@@ -54,15 +92,22 @@ const ModelContent: React.FC<ModelProps> = ({
   useFrame(({ clock }) => {
     if (!gemMaterialRef.current || disableInteractivity) return;
     const t = clock.getElapsedTime();
-  const freq = 0.8; // pulses per second (slower)
+    const freq = 1.0; // pulses per second
     const pulse = (Math.sin(t * Math.PI * freq) + 1) / 2; // 0..1
-    const base = 0.05;
-    const amp = hovered ? 0.8 : 0.4; // stronger when hovered
+    const base = 0.15; // higher base glow
+    const amp = hovered ? 1.4 : 0.9; // stronger when hovered
     gemMaterialRef.current.emissiveIntensity = base + pulse * amp;
     // optional tiny scale pulse to enhance affordance
     if (gemRef.current) {
-      const s = 1 + pulse * 0.03 * (hovered ? 1.4 : 1.0);
+      const s = 1 + pulse * 0.045 * (hovered ? 1.6 : 1.0);
       gemRef.current.scale.set(s, s, s);
+      // update glow size and intensity if available
+      if (glowRef.current && gemRef.current) {
+        const glowScale = 1.2 + pulse * (hovered ? 0.9 : 0.6);
+        glowRef.current.scale.set(glowScale * s, glowScale * s, 1);
+        const mat = glowRef.current.material as THREE.SpriteMaterial;
+        if (mat) mat.opacity = Math.min(1, 0.25 + pulse * (hovered ? 0.9 : 0.6));
+      }
     }
   });
 
@@ -155,6 +200,13 @@ const ModelContent: React.FC<ModelProps> = ({
         // provide descriptive metadata for tooling / developer accessibility
         userData={{ 'aria-label': 'Joya de la corona, presiona para ver detalles' }}
       />
+      {/* Attach glow sprite as child of gem mesh when both exist */}
+      {gemRef.current && glowRef.current && !gemRef.current.children.includes(glowRef.current) && (() => {
+        gemRef.current.add(glowRef.current);
+        // Position the sprite slightly in front of the gem
+        glowRef.current.position.set(0, 0.05, 0.1);
+        return null as unknown as JSX.Element;
+      })()}
     </a.group>
   );
 };

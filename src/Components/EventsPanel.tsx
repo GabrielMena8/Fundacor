@@ -5,6 +5,8 @@ import type { Event } from '../Types/sanity';
 import EventCard from './EventCard';
 import { LinkButton } from './ui/Button';
 import { Icon } from './ui/Icon';
+import NewsletterSignup from './NewsletterSignup';
+import ShareButtons from './ShareButtons';
 
 type EventsPanelProps = {
   show: boolean;
@@ -128,6 +130,15 @@ export const EventsPanel: React.FC<EventsPanelProps> = ({ show }) => {
                     className="w-5 h-5 ml-2 transform group-hover:translate-x-1 transition-transform duration-300"
                   />
                 </LinkButton>
+              </div>
+
+              {/* Newsletter + share buttons (compact inside events panel) */}
+              <div className="mt-6">
+                <div className="text-[#FFDD08] mb-2">Suscríbete</div>
+                <NewsletterSignup />
+                <div className="mt-3 flex justify-center">
+                  <ShareButtons title="Eventos Fundación Coromotana" />
+                </div>
               </div>
             </div>
           )}

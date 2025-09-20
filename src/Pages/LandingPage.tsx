@@ -300,14 +300,10 @@ const LandingPage: React.FC = () => {
 
   // -------- RENDER --------
   return (
-    <div className="w-screen h-screen bg-gradient-to-b from-[#f4e7e7] to-[#F5F5F5] relative font-caviardreams">
+    <div className="w-screen h-screen bg-gradient-to-b from-[#e8efec] to-[#dfe7e4] relative font-caviardreams">
       {isLoading && <Loader loadingState={loadingState} />}
       
-      {/* Copyright disclaimer */}
-      <div className="absolute bottom-2 left-1/2 transform -translate-x-1/2 text-xs text-[#1F322E]/70 text-center z-10 w-full px-4">
-        <p>© 2023 Fundación Coromotana. Todos los derechos reservados.</p>
-        <p className="text-[10px] mt-1">Diseño por Vortex.</p>
-      </div>
+      {/* Newsletter removed from landing page per request */}
       
       {/* Show tooltip only if not loading */}
       {showTooltip && !isLoading && <Tooltip show={showTooltip} />}
@@ -315,24 +311,23 @@ const LandingPage: React.FC = () => {
       {isMobileOrTablet ? (
         // ---------------- MÓVIL/TABLET ----------------
         <div className="flex flex-col h-full">
-          {/* SVG Background Pattern */}
-          <div 
-            className="absolute inset-0 z-0 opacity-15" 
-            style={{ 
-              backgroundImage: `url(${logoBackgroundUrl})`,
-              backgroundRepeat: 'repeat',
-              backgroundSize: '200px',
-              backgroundPosition: '30px 30px',
-              filter: 'blur(0.5px)',
-              pointerEvents: 'none',
-              willChange: 'background-image'
-            }}
-            role="presentation"
-            aria-hidden="true"
-          />
+          {/* SVG Background Pattern (image layer + Tailwind overlay) */}
+          <div className="absolute inset-0 z-0 pointer-events-none" aria-hidden="true">
+            <div
+              className="absolute inset-0 opacity-10 filter brightness-80 saturate-75"
+              style={{
+                backgroundImage: `url(${logoBackgroundUrl})`,
+                backgroundRepeat: 'repeat',
+                backgroundSize: '180px',
+                backgroundPosition: '30px 30px',
+                willChange: 'background-image',
+              }}
+            />
+            <div className="absolute inset-0 bg-black/40" />
+          </div>
           
           <div className="w-full h-3/5 relative z-10 flex items-center justify-center">
-            <Canvas className="w-full h-full" camera={{ position: initialCameraPos, fov: 40 }}>
+            <Canvas className="w-full h-full bg-transparent" gl={{ alpha: true, antialias: true }} style={{ background: 'transparent' }} camera={{ position: initialCameraPos, fov: 40 }}>
               <Suspense fallback={null}>
                 <ambientLight intensity={0.5} />
                 <directionalLight position={[10, 10, 5]} intensity={1.5} />
@@ -416,23 +411,22 @@ const LandingPage: React.FC = () => {
       ) : (
         // ---------------- DESKTOP ----------------
         <div className="relative w-full h-full">
-          {/* SVG Background Pattern */}
-          <div 
-            className="absolute inset-0 z-0 opacity-15" 
-            style={{ 
-              backgroundImage: `url(${logoBackgroundUrl})`,
-              backgroundRepeat: 'repeat',
-              backgroundSize: '200px',
-              backgroundPosition: '30px 30px',
-              filter: 'blur(0.5px)',
-              pointerEvents: 'none',
-              willChange: 'background-image'
-            }}
-            role="presentation"
-            aria-hidden="true"
-          />
+          {/* SVG Background Pattern (image layer + Tailwind overlay) */}
+          <div className="absolute inset-0 z-0 pointer-events-none" aria-hidden="true">
+            <div
+              className="absolute inset-0 opacity-10 filter brightness-80 saturate-75"
+              style={{
+                backgroundImage: `url(${logoBackgroundUrl})`,
+                backgroundRepeat: 'repeat',
+                backgroundSize: '180px',
+                backgroundPosition: '30px 30px',
+                willChange: 'background-image',
+              }}
+            />
+            <div className="absolute inset-0 bg-black/15" />
+          </div>
           
-          <Canvas className="absolute inset-0 z-10" camera={{ position: initialCameraPos, fov: 40 }}>
+          <Canvas className="absolute inset-0 z-10 bg-transparent" gl={{ alpha: true, antialias: true }} style={{ background: 'transparent' }} camera={{ position: initialCameraPos, fov: 40 }}>
             <Suspense fallback={null}>
               <ambientLight intensity={0.5} />
               <directionalLight position={[10, 10, 5]} intensity={1.5} />
