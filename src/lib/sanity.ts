@@ -32,10 +32,18 @@ export function urlFor(source: SanityImage | null | undefined) {
   return builder.image(source as unknown as SanityImage);
 }
 
-export function imageUrl(source: SanityImage | null | undefined, opts?: { width?: number; height?: number; quality?: number }) {
+export function imageUrl(source: SanityImage | null | undefined, opts?: { width?: number; height?: number; quality?: number; crop?: boolean; fpY?: number }) {
   if (!source) return '';
   const q = opts?.quality ?? 80;
-  let b = builder.image(source).auto('format').fit('max').quality(q).format('webp');
+  let b = builder.image(source).auto('format').quality(q).format('webp');
+  if (opts?.crop) {
+    b = b.fit('crop').crop('focalpoint');
+    if (opts.fpY !== undefined) {
+      b = b.focalPoint(0.5, opts.fpY);
+    }
+  } else {
+    b = b.fit('max');
+  }
   if (opts?.width) b = b.width(opts.width);
   if (opts?.height) b = b.height(opts.height);
   return b.url();

@@ -65,18 +65,26 @@ export default function EventCard({
           <div className="absolute inset-0 bg-white/5 z-[5]"></div>
         )}
         <div className="absolute inset-0 bg-gradient-to-t from-[#0F1A19]/80 to-transparent z-10 rounded-t-xl"></div>
-        <img
-          src={imageUrl || placeholder}
-          alt={title}
-          onLoad={() => setImgLoaded(true)}
-          onError={(e) => {
-            (e.target as HTMLImageElement).src = placeholder;
-            setImgLoaded(true);
-          }}
-          loading={imgLoadingMode as 'eager' | 'lazy'}
-          decoding="async"
-          className={`w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-700 ${hasImage ? '' : 'opacity-60'} ${imgLoaded ? 'opacity-100' : 'opacity-0'} transition-opacity duration-300`}
-        />
+        {hasImage ? (
+          <img
+            src={imageUrl}
+            alt={title}
+            onLoad={() => setImgLoaded(true)}
+            onError={(e) => {
+              (e.target as HTMLImageElement).src = placeholder;
+              setImgLoaded(true);
+            }}
+            loading={imgLoadingMode as 'eager' | 'lazy'}
+            decoding="async"
+            className={`w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-700 ${imgLoaded ? 'opacity-100' : 'opacity-0'} transition-opacity duration-300`}
+          />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center">
+            <svg className="w-14 h-14 text-[#FFDD08]/40" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+            </svg>
+          </div>
+        )}
         <div className="absolute top-2.5 left-3 right-3 z-20 flex justify-between items-center">
           <span className="px-2.5 py-1 text-[11px] rounded-full bg-black/50 text-[#FFDD08] border border-[#FFDD08]/30 whitespace-nowrap">
             {department || 'Sin departamento'}

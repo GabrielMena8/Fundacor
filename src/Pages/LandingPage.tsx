@@ -41,11 +41,13 @@ const Loader: React.FC<{ loadingState: LoadingState }> = ({ loadingState }) => {
 
   return (
     <div className="fixed inset-0 bg-gradient-to-l from-[#1f322e]/50 via-[#2A433E]/40 to-[#3B544A]/30 backdrop-blur-sm flex items-center justify-center z-50">
-      <div className="flex flex-col items-center">
+      <div className="flex flex-col items-center max-w-xs text-center">
         <div className="w-16 h-16 border-4 border-[#FFDD08]/80 border-t-transparent rounded-full animate-spin mb-4"></div>
         <div className={`${sharedStyles.titleText} text-xl opacity-80`}>{getLoadingText()}</div>
-        <div className="mt-2 text-sm text-white/60">
-          {loadingState === LoadingStates.MODEL_LOADED && 'Optimizando renderizado...'}
+        <div className="mt-4 px-4 py-3 rounded-xl bg-white/5 border border-white/10">
+          <p className="text-white/70 text-sm leading-relaxed">
+            <span className="text-[#FFDD08] font-medium">Tip:</span> Haz click en distintos puntos de la joya para explorar la informacion de Fundacor
+          </p>
         </div>
       </div>
     </div>
@@ -109,13 +111,13 @@ const LandingPage: React.FC = () => {
     // Initial loading state
     const initialTimer = setTimeout(() => {
       setLoadingState(LoadingStates.MODEL_LOADED);
-    }, 1000);
+    }, 1500);
 
-    // Complete loading state
+    // Complete loading state — delay extra para que se lea el tip
     const completeTimer = setTimeout(() => {
       setLoadingState(LoadingStates.COMPLETE);
       setShowTooltip(false);
-    }, 2000);
+    }, 5000);
 
     // Add event listener for closing events panel
     const handleCloseEventsPanel = () => {

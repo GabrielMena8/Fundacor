@@ -87,7 +87,7 @@ export const EventsPanel: React.FC<EventsPanelProps> = ({ show }) => {
                   title={event.title || ''}
                   date={event.date || ''}
                   description={event.description || ''}
-                  imageUrl={event.image ? imageUrl(event.image) : ''}
+                  imageUrl={event.image ? imageUrl(event.image, { width: 800, height: 500, crop: true, fpY: 0.35 }) : ''}
                   location={event.location || ''}
                   department={event.department || ''}
                   variant="panel"
