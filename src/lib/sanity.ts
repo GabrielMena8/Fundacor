@@ -33,7 +33,9 @@ export function urlFor(source: SanityImage | null | undefined) {
 }
 
 export function imageUrl(source: SanityImage | null | undefined, opts?: { width?: number; height?: number; quality?: number; crop?: boolean; fpY?: number }) {
-  if (!source) return '';
+  // A document can have an `image` field without an uploaded asset
+  // (e.g. only `alt` was filled in Studio) — the builder throws on those.
+  if (!source || !source.asset?._ref) return '';
   const q = opts?.quality ?? 80;
   let b = builder.image(source).auto('format').quality(q).format('webp');
   if (opts?.crop) {
@@ -98,8 +100,8 @@ export async function getMembers(): Promise<Member[]> {
     
     // Preload member images in the background
     members.forEach((member: Member) => {
-      if (member.image) {
-        const src = imageUrl(member.image);
+      const src = imageUrl(member.image);
+      if (src) {
         preloadImage(src).catch((error) => {
           console.warn(`Failed to preload image for member ${member.name}:`, error);
         });
